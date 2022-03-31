@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "cli-progress": "^3.10.0",
+    "ot-json1": "https://github.com/ottypes/json1.git"
+  }
+}

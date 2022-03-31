@@ -1,6 +1,15 @@
+/*
+ * @Date: 2022-03-31 09:46:25
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-03-31 15:22:48
+ * @FilePath: /sharedb/examples/counter/server.js
+ * @Description: 
+ */
 var http = require('http');
 var express = require('express');
-var ShareDB = require('sharedb');
+// var ShareDB = require('sharedb');
+var ShareDB = require('../modules/sharedb');
 var WebSocket = require('ws');
 var WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 
@@ -34,6 +43,6 @@ function startServer() {
     backend.listen(stream);
   });
 
-  server.listen(8080);
+  server.listen(8089);
   console.log('Listening on http://localhost:8080');
 }

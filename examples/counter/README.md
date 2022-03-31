@@ -1,3 +1,4 @@
+
 # Simple realtime client/server sync with ShareDB
 
 ![Demo](demo.gif)
@@ -18,6 +19,11 @@ npm install
 ## Build JavaScript bundle and run server
 ```
 npm run build && npm start
+```
+```shell
+npm install -g browserify
+npm install
+browserify client.js -o static/bundle.js
 ```
 
 ## Run app in browser
