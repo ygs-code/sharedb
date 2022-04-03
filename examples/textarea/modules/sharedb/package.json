@@ -1,0 +1,78 @@
+{
+  "_from": "sharedb@^1.0.0-beta",
+  "_id": "sharedb@1.9.2",
+  "_inBundle": false,
+  "_integrity": "sha512-YioIGNOjITm+loRrGYSCF1S6tbid15MUHloQN7035tAbDlJuveHmxnQ/6e/CguAFsGvFom2zfj3xUJLXGaTyYg==",
+  "_location": "/sharedb",
+  "_phantomChildren": {
+    "lodash": "4.17.21"
+  },
+  "_requested": {
+    "type": "range",
+    "registry": true,
+    "raw": "sharedb@^1.0.0-beta",
+    "name": "sharedb",
+    "escapedName": "sharedb",
+    "rawSpec": "^1.0.0-beta",
+    "saveSpec": null,
+    "fetchSpec": "^1.0.0-beta"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmmirror.com/sharedb/-/sharedb-1.9.2.tgz",
+  "_shasum": "136d06a4bbdd481a98f961cbeaf6fc367435fef8",
+  "_spec": "sharedb@^1.0.0-beta",
+  "_where": "K:\\sharedb\\examples\\textarea",
+  "author": {
+    "name": "Nate Smith and Joseph Gentle"
+  },
+  "bugs": {
+    "url": "https://github.com/share/sharedb/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "arraydiff": "^0.1.1",
+    "async": "^2.6.3",
+    "fast-deep-equal": "^2.0.1",
+    "hat": "0.0.3",
+    "ot-json0": "^1.0.1"
+  },
+  "deprecated": false,
+  "description": "JSON OT database backend",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "coveralls": "^3.0.7",
+    "eslint": "^6.5.1",
+    "eslint-config-google": "^0.14.0",
+    "lolex": "^5.1.1",
+    "mocha": "^8.2.1",
+    "nyc": "^14.1.1",
+    "ot-json0-v2": "github:ottypes/json0",
+    "ot-json1": "^0.3.0",
+    "sharedb-legacy": "npm:sharedb@=1.1.0",
+    "sinon": "^7.5.0"
+  },
+  "files": [
+    "lib/",
+    "test/"
+  ],
+  "homepage": "https://github.com/share/sharedb#readme",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "name": "sharedb",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/share/sharedb.git"
+  },
+  "scripts": {
+    "docs:build": "cd docs && bundle exec jekyll build",
+    "docs:install": "cd docs && bundle install",
+    "docs:start": "cd docs && bundle exec jekyll serve --livereload",
+    "lint": "eslint --ignore-path .gitignore '**/*.js'",
+    "lint:fix": "npm run lint -- --fix",
+    "test": "mocha",
+    "test-cover": "nyc --temp-dir=coverage -r text -r lcov npm test"
+  },
+  "version": "1.9.2"
+}
