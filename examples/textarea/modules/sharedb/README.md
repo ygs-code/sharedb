@@ -1,5 +1,3 @@
-_This README is for `sharedb@1.x`. For `sharedb@1.x-beta`, see [the 1.x-beta branch](https://github.com/share/sharedb/tree/1.x-beta). To upgrade, see [the upgrade guide](https://github.com/share/sharedb/wiki/Upgrading-to-sharedb@1.0.0-from-1.0.0-beta)._
-
 # ShareDB
 
   [![NPM Version](https://img.shields.io/npm/v/sharedb.svg)](https://npmjs.org/package/sharedb)
@@ -11,8 +9,9 @@ ShareDB is a realtime database backend based on [Operational Transformation
 documents. It is the realtime backend for the [DerbyJS web application
 framework](http://derbyjs.com/).
 
-For questions, discussion and announcements, join the [ShareJS mailing
-list](https://groups.google.com/forum/?fromgroups#!forum/sharejs) or [check the FAQ](./docs/faq.md).
+For help, questions, discussion and announcements, join the [ShareJS mailing
+list](https://groups.google.com/forum/?fromgroups#!forum/sharejs) or [read the documentation](https://share.github.io/sharedb/
+).
 
 Please report any bugs you find to the [issue
 tracker](https://github.com/share/sharedb/issues).

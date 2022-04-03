@@ -14,6 +14,7 @@ var StreamSocket = require('./stream-socket');
 var SubmitRequest = require('./submit-request');
 var ReadSnapshotsRequest = require('./read-snapshots-request');
 var util = require('./util');
+var logger = require('./logger');
 
 var ERROR_CODE = ShareDBError.CODES;
 
@@ -34,6 +35,14 @@ function Backend(options) {
   this.suppressPublish = !!options.suppressPublish;
   this.maxSubmitRetries = options.maxSubmitRetries || null;
   this.presenceEnabled = !!options.presence;
+  this.doNotForwardSendPresenceErrorsToClient = !!options.doNotForwardSendPresenceErrorsToClient;
+  if (this.presenceEnabled && !this.doNotForwardSendPresenceErrorsToClient) {
+    logger.warn(
+      'Broadcasting "sendPresence" middleware errors to clients is deprecated ' +
+      'and will be removed in a future release. Disable this behaviour with:\n\n' +
+      'new Backend({doNotForwardSendPresenceErrorsToClient: true})\n\n'
+    );
+  }
 
   // Map from event name to a list of middleware
   this.middleware = {};
@@ -41,6 +50,13 @@ function Backend(options) {
   // The number of open agents for monitoring and testing memory leaks
   this.agentsCount = 0;
   this.remoteAgentsCount = 0;
+
+  this.errorHandler = typeof options.errorHandler === 'function' ?
+    options.errorHandler :
+    // eslint-disable-next-line no-unused-vars
+    function(error, context) {
+      logger.error(error);
+    };
 }
 module.exports = Backend;
 emitter.mixin(Backend);
@@ -68,6 +84,8 @@ Backend.prototype.MIDDLEWARE_ACTIONS = {
   // by design, changing existing reply properties can cause weird bugs, since
   // the rest of ShareDB would be unaware of those changes.
   reply: 'reply',
+  // The server received presence information
+  receivePresence: 'receivePresence',
   // About to send presence information to a client
   sendPresence: 'sendPresence',
   // An operation is about to be submitted to the database
@@ -754,6 +772,16 @@ Backend.prototype._fetchSnapshot = function(collection, id, version, callback) {
   var db = this.db;
   var backend = this;
 
+  var shouldGetLatestSnapshot = version === null;
+  if (shouldGetLatestSnapshot) {
+    return backend.db.getSnapshot(collection, id, null, null, function(error, snapshot) {
+      if (error) return callback(error);
+
+      callback(null, snapshot);
+    });
+  }
+
+
   this.milestoneDb.getMilestoneSnapshot(collection, id, version, function(error, milestoneSnapshot) {
     if (error) return callback(error);
 
@@ -815,6 +843,15 @@ Backend.prototype._fetchSnapshotByTimestamp = function(collection, id, timestamp
   var from = 0;
   var to = null;
 
+  var shouldGetLatestSnapshot = timestamp === null;
+  if (shouldGetLatestSnapshot) {
+    return backend.db.getSnapshot(collection, id, null, null, function(error, snapshot) {
+      if (error) return callback(error);
+
+      callback(null, snapshot);
+    });
+  }
+
   milestoneDb.getMilestoneSnapshotAtOrBeforeTime(collection, id, timestamp, function(error, snapshot) {
     if (error) return callback(error);
     milestoneSnapshot = snapshot;
@@ -865,10 +902,6 @@ function pluckIds(snapshots) {
 }
 
 function filterOpsInPlaceBeforeTimestamp(ops, timestamp) {
-  if (timestamp === null) {
-    return;
-  }
-
   for (var i = 0; i < ops.length; i++) {
     var op = ops[i];
     var opTimestamp = op.m && op.m.ts;

@@ -1,26 +1,31 @@
 {
-  "_from": "sharedb-string-binding@^1.0.0",
+  "_args": [
+    [
+      "sharedb-string-binding@1.0.0",
+      "K:\\sharedb\\examples\\textarea"
+    ]
+  ],
+  "_from": "sharedb-string-binding@1.0.0",
   "_id": "sharedb-string-binding@1.0.0",
   "_inBundle": false,
   "_integrity": "sha512-9Xd0148ghUD/Bu0gR9HHmxHVkpU2YlA1Ol6Yr815iILmyHfXirgrp60t18hLjUMwBAWbvE7dffCPRX+/FnlNpg==",
   "_location": "/sharedb-string-binding",
   "_phantomChildren": {},
   "_requested": {
-    "type": "range",
+    "type": "version",
     "registry": true,
-    "raw": "sharedb-string-binding@^1.0.0",
+    "raw": "sharedb-string-binding@1.0.0",
     "name": "sharedb-string-binding",
     "escapedName": "sharedb-string-binding",
-    "rawSpec": "^1.0.0",
+    "rawSpec": "1.0.0",
     "saveSpec": null,
-    "fetchSpec": "^1.0.0"
+    "fetchSpec": "1.0.0"
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "https://registry.npmmirror.com/sharedb-string-binding/-/sharedb-string-binding-1.0.0.tgz",
-  "_shasum": "0770e36cdcf2c608844dddf8f0a38be42564b102",
-  "_spec": "sharedb-string-binding@^1.0.0",
+  "_spec": "1.0.0",
   "_where": "K:\\sharedb\\examples\\textarea",
   "author": {
     "name": "Nate Smith"
@@ -28,11 +33,9 @@
   "bugs": {
     "url": "https://github.com/share/sharedb-string-binding/issues"
   },
-  "bundleDependencies": false,
   "dependencies": {
     "text-diff-binding": "^1.0.0"
   },
-  "deprecated": false,
   "description": "Two-way bind json0 string operations in a ShareDB doc to an HTML text input or textarea",
   "devDependencies": {
     "coveralls": "^2.11.9",

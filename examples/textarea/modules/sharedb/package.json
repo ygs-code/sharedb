@@ -1,8 +1,8 @@
 {
-  "_from": "sharedb@^1.0.0-beta",
-  "_id": "sharedb@1.9.2",
+  "_from": "sharedb@^2.2.5",
+  "_id": "sharedb@2.2.5",
   "_inBundle": false,
-  "_integrity": "sha512-YioIGNOjITm+loRrGYSCF1S6tbid15MUHloQN7035tAbDlJuveHmxnQ/6e/CguAFsGvFom2zfj3xUJLXGaTyYg==",
+  "_integrity": "sha512-uCy8Npx8Azf21PmNUGqfIKRbnisH2U+N9Z0CJILWq23+HqcWRAA5n35m/dMm4ZuTQalYeWlR2/kaV8Wm0nXr3g==",
   "_location": "/sharedb",
   "_phantomChildren": {
     "lodash": "4.17.21"
@@ -10,19 +10,19 @@
   "_requested": {
     "type": "range",
     "registry": true,
-    "raw": "sharedb@^1.0.0-beta",
+    "raw": "sharedb@^2.2.5",
     "name": "sharedb",
     "escapedName": "sharedb",
-    "rawSpec": "^1.0.0-beta",
+    "rawSpec": "^2.2.5",
     "saveSpec": null,
-    "fetchSpec": "^1.0.0-beta"
+    "fetchSpec": "^2.2.5"
   },
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "https://registry.npmmirror.com/sharedb/-/sharedb-1.9.2.tgz",
-  "_shasum": "136d06a4bbdd481a98f961cbeaf6fc367435fef8",
-  "_spec": "sharedb@^1.0.0-beta",
+  "_resolved": "https://registry.npmmirror.com/sharedb/-/sharedb-2.2.5.tgz",
+  "_shasum": "8f6e0b4db86a89c226ebb09e0c98dcec4116f467",
+  "_spec": "sharedb@^2.2.5",
   "_where": "K:\\sharedb\\examples\\textarea",
   "author": {
     "name": "Nate Smith and Joseph Gentle"
@@ -43,13 +43,14 @@
   "devDependencies": {
     "chai": "^4.2.0",
     "coveralls": "^3.0.7",
-    "eslint": "^6.5.1",
+    "eslint": "^7.32.0",
     "eslint-config-google": "^0.14.0",
     "lolex": "^5.1.1",
     "mocha": "^8.2.1",
     "nyc": "^14.1.1",
     "ot-json0-v2": "github:ottypes/json0",
     "ot-json1": "^0.3.0",
+    "rich-text": "^4.1.0",
     "sharedb-legacy": "npm:sharedb@=1.1.0",
     "sinon": "^7.5.0"
   },
@@ -74,5 +75,5 @@
     "test": "mocha",
     "test-cover": "nyc --temp-dir=coverage -r text -r lcov npm test"
   },
-  "version": "1.9.2"
+  "version": "2.2.5"
 }

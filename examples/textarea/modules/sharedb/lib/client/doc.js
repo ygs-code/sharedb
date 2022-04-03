@@ -3,6 +3,7 @@ var logger = require('../logger');
 var ShareDBError = require('../error');
 var types = require('../types');
 var util = require('../util');
+var clone = util.clone;
 var deepEqual = require('fast-deep-equal');
 
 var ERROR_CODE = ShareDBError.CODES;
@@ -113,6 +114,10 @@ function Doc(connection, collection, id) {
   // ops are still received. Should be toggled through the pause() and
   // resume() methods to correctly flush on resume.
   this.paused = false;
+
+  // Internal counter that gets incremented every time doc.data is updated.
+  // Used as a cheap way to check if doc.data has changed.
+  this._dataStateVersion = 0;
 }
 emitter.mixin(Doc);
 
@@ -155,11 +160,16 @@ Doc.prototype._setType = function(newType) {
   } else if (newType === null) {
     this.type = newType;
     // If we removed the type from the object, also remove its data
-    this.data = undefined;
+    this._setData(undefined);
   } else {
     var err = new ShareDBError(ERROR_CODE.ERR_DOC_TYPE_NOT_RECOGNIZED, 'Missing type ' + newType);
     return this.emit('error', err);
   }
+};
+
+Doc.prototype._setData = function(data) {
+  this.data = data;
+  this._dataStateVersion++;
 };
 
 // Ingest snapshot data. This data must include a version, snapshot and type.
@@ -217,9 +227,11 @@ Doc.prototype.ingestSnapshot = function(snapshot, callback) {
   this.version = snapshot.v;
   var type = (snapshot.type === undefined) ? types.defaultType : snapshot.type;
   this._setType(type);
-  this.data = (this.type && this.type.deserialize) ?
-    this.type.deserialize(snapshot.data) :
-    snapshot.data;
+  this._setData(
+    (this.type && this.type.deserialize) ?
+      this.type.deserialize(snapshot.data) :
+      snapshot.data
+  );
   this.emit('load');
   callback && callback();
 };
@@ -612,6 +624,8 @@ Doc.prototype._otApply = function(op, source) {
       for (var i = 0; i < op.op.length; i++) {
         var component = op.op[i];
         var componentOp = {op: [component]};
+        // Apply the individual op component
+        this.emit('before op', componentOp.op, source, op.src);
         // Transform componentOp against any ops that have been submitted
         // sychronously inside of an op event handler since we began apply of
         // our operation
@@ -619,9 +633,7 @@ Doc.prototype._otApply = function(op, source) {
           var transformErr = transformX(this.applyStack[j], componentOp);
           if (transformErr) return this._hardRollback(transformErr);
         }
-        // Apply the individual op component
-        this.emit('before op', componentOp.op, source, op.src);
-        this.data = this.type.apply(this.data, componentOp.op);
+        this._setData(this.type.apply(this.data, componentOp.op));
         this.emit('op', componentOp.op, source, op.src);
       }
       this.emit('op batch', op.op, source);
@@ -634,7 +646,7 @@ Doc.prototype._otApply = function(op, source) {
     // the snapshot before it gets changed
     this.emit('before op', op.op, source, op.src);
     // Apply the operation to the local data, mutating it in place
-    this.data = this.type.apply(this.data, op.op);
+    this._setData(this.type.apply(this.data, op.op));
     // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with
     // submission and before the server or other clients have received the op.
@@ -647,11 +659,15 @@ Doc.prototype._otApply = function(op, source) {
 
   if (op.create) {
     this._setType(op.create.type);
-    this.data = (this.type.deserialize) ?
-      (this.type.createDeserialized) ?
-        this.type.createDeserialized(op.create.data) :
-        this.type.deserialize(this.type.create(op.create.data)) :
-      this.type.create(op.create.data);
+    if (this.type.deserialize) {
+      if (this.type.createDeserialized) {
+        this._setData(this.type.createDeserialized(op.create.data));
+      } else {
+        this._setData(this.type.deserialize(this.type.create(op.create.data)));
+      }
+    } else {
+      this._setData(this.type.create(op.create.data));
+    }
     this.emit('create', source);
     return;
   }
@@ -919,6 +935,15 @@ Doc.prototype.resume = function() {
   this.flush();
 };
 
+// Create a snapshot that can be serialized, deserialized, and passed into `Doc.ingestSnapshot`.
+Doc.prototype.toSnapshot = function() {
+  return {
+    v: this.version,
+    data: clone(this.data),
+    type: this.type.uri
+  };
+};
+
 // *** Receiving operations
 
 // This is called when the server acknowledges an operation from the client.
@@ -948,7 +973,13 @@ Doc.prototype._rollback = function(err) {
   var op = this.inflightOp;
 
   if ('op' in op && op.type.invert) {
-    op.op = op.type.invert(op.op);
+    try {
+      op.op = op.type.invert(op.op);
+    } catch (error) {
+      // If the op doesn't support `.invert()`, we just reload the doc
+      // instead of trying to locally revert it.
+      return this._hardRollback(err);
+    }
 
     // Transform the undo operation by any pending ops.
     for (var i = 0; i < this.pendingOps.length; i++) {

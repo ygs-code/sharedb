@@ -439,6 +439,60 @@ describe('SnapshotVersionRequest', function() {
         }
       ], done);
     });
+
+    describe('with version null', function() {
+      it('fetches a latest version', function(done) {
+        var doc = backendWithMilestones.connect().get('books', 'mocking-bird');
+
+        async.waterfall([
+          doc.create.bind(doc, {title: 'To Kill a Mocking Bird'}),
+          doc.submitOp.bind(doc, {p: ['author'], oi: 'Harper Lea'}),
+          doc.submitOp.bind(doc, {p: ['author'], od: 'Harper Lea', oi: 'Harper Lee'}),
+          function(next) {
+            sinon.spy(milestoneDb, 'getMilestoneSnapshot');
+            sinon.spy(db, 'getOps');
+            backendWithMilestones.connect().fetchSnapshot('books', 'mocking-bird', null, next);
+          },
+          function(snapshot, next) {
+            expect(milestoneDb.getMilestoneSnapshot.called).to.be.false;
+            expect(db.getOps.called).to.be.false;
+            expect(snapshot.v).to.equal(3);
+            expect(snapshot.data).to.eql({
+              title: 'To Kill a Mocking Bird',
+              author: 'Harper Lee'
+            });
+            next();
+          }
+        ], done);
+      });
+
+      it('return error if getSnapshot fails', function(done) {
+        var doc = backendWithMilestones.connect().get('books', 'mocking-bird');
+
+        async.waterfall([
+          doc.create.bind(doc, {title: 'To Kill a Mocking Bird'}),
+          doc.submitOp.bind(doc, {p: ['author'], oi: 'Harper Lea'}),
+          doc.submitOp.bind(doc, {p: ['author'], od: 'Harper Lea', oi: 'Harper Lee'}),
+          function(next) {
+            sinon.spy(milestoneDb, 'getMilestoneSnapshot');
+            sinon.spy(db, 'getOps');
+            sinon.stub(db, 'getSnapshot').callsFake(function(_collection, _id, _fields, _options, callback) {
+              callback(new Error('TEST_ERROR'));
+            });
+            backendWithMilestones.connect().fetchSnapshot('books', 'mocking-bird', null, function(error) {
+              expect(error.message).to.be.equal('TEST_ERROR');
+              next(null, null);
+            });
+          },
+          function(snapshot, next) {
+            expect(milestoneDb.getMilestoneSnapshot.called).to.be.false;
+            expect(db.getOps.called).to.be.false;
+            expect(db.getSnapshot.called).to.be.true;
+            next();
+          }
+        ], done);
+      });
+    });
   });
 
   describe('invalid json0v2 path', function() {
@@ -491,6 +545,52 @@ describe('SnapshotVersionRequest', function() {
             {title: 'Subtle Knife'},
             {title: 'Northern Lights'}
           ]);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('invalid json0v2 path with multiple components', function() {
+    beforeEach(function(done) {
+      var doc = backend.connect().get('series', 'his-dark-materials');
+      async.series([
+        doc.create.bind(doc, [{}]),
+        doc.submitOp.bind(doc, [
+          {p: ['0', 'title'], oi: ''},
+          {p: ['0', 'title', 0], si: 'Northern Lights'}
+        ])
+      ], done);
+    });
+
+    describe('json0v1', function() {
+      it('fetches v2 with json0v1', function(done) {
+        backend.connect().fetchSnapshot('series', 'his-dark-materials', 2, function(error, snapshot) {
+          if (error) return done(error);
+          expect(snapshot.data).to.eql([{title: 'Northern Lights'}]);
+          done();
+        });
+      });
+    });
+
+    describe('json0v2', function() {
+      var defaultType;
+
+      beforeEach(function() {
+        defaultType = types.defaultType;
+        types.defaultType = json0v2;
+        types.register(json0v2);
+      });
+
+      afterEach(function() {
+        types.defaultType = defaultType;
+        types.register(defaultType);
+      });
+
+      it('fetches v2 with json0v2', function(done) {
+        backend.connect().fetchSnapshot('series', 'his-dark-materials', 2, function(error, snapshot) {
+          if (error) return done(error);
+          expect(snapshot.data).to.eql([{title: 'Northern Lights'}]);
           done();
         });
       });
