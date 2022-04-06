@@ -817,7 +817,8 @@ Doc.prototype._submit = function (
       return this.emit("error", err);
     }
     // Try to normalize the op. This removes trailing skip:0's and things like that.
-    // 调用type 方法
+    // 调用type 方法 
+    console.log('this.type=================',this.type)
     if (this.type.normalize) {
       op.op = this.type.normalize(op.op);
     }
