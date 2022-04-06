@@ -8,12 +8,12 @@
  */
 
 // sharedb 协同
-var sharedb = require("./modules/sharedb/lib/client");
+var sharedb = require("../modules/sharedb/lib/client");
 // websocket 连接
-var ReconnectingWebSocket = require("./modules/reconnecting-websocket");
+var ReconnectingWebSocket = require("../modules/reconnecting-websocket");
 
 //给input添加onChange事件，触发onChange事件 变成op，调用sharedb 发布op消息
-var StringBinding = require("./modules/sharedb-string-binding");
+var StringBinding = require("../modules/sharedb-string-binding");
 // socket
 var socket = new ReconnectingWebSocket("ws://" + window.location.host);
 

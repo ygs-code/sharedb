@@ -4,14 +4,16 @@ var emitter = require("../emitter");
 var logger = require("../logger");
 //类似 Error 对象的 错误对象
 var ShareDBError = require("../error");
+
 var types = require("../types");
+
 var util = require("../util");
 var clone = util.clone;
 var deepEqual = require("fast-deep-equal");
 
 var ERROR_CODE = ShareDBError.CODES;
 
-console.log('types=',types)
+console.log("types=", types);
 /**
  * A Doc is a client's view on a sharejs document.
  *
@@ -131,6 +133,7 @@ function Doc(
 }
 emitter.mixin(Doc);
 
+// 销毁文档
 Doc.prototype.destroy = function (callback) {
   var doc = this;
   doc.whenNothingPending(function () {
@@ -168,7 +171,7 @@ Doc.prototype._setType = function (newType) {
     this.type = newType;
   } else if (newType === null) {
     this.type = newType;
-    // If we removed the type from the object, also remove its data
+    // If we removed the type from the object, also remove its data 如果我们从对象中删除了类型，也删除了它的数据
     this._setData(undefined);
   } else {
     var err = new ShareDBError(
@@ -452,6 +455,7 @@ Doc.prototype.fetch = function (callback) {
 //获取初始文档并保持接收更新
 Doc.prototype.subscribe = function (callback) {
   var wantSubscribe = true;
+  //查找订阅
   this._queueSubscribe(wantSubscribe, callback);
 };
 
@@ -462,12 +466,15 @@ Doc.prototype.unsubscribe = function (callback) {
   this._queueSubscribe(wantSubscribe, callback);
 };
 
+// 查找订阅
 Doc.prototype._queueSubscribe = function (wantSubscribe, callback) {
   var lastRequest =
     this.pendingSubscribe[this.pendingSubscribe.length - 1] ||
     this.inflightSubscribe;
   var isDuplicateRequest =
     lastRequest && lastRequest.wantSubscribe === wantSubscribe;
+  console.log("lastRequest=", lastRequest);
+  console.log("isDuplicateRequest=", isDuplicateRequest);
   if (isDuplicateRequest) {
     lastRequest.callback = combineCallbacks([lastRequest.callback, callback]);
     return;
@@ -476,21 +483,29 @@ Doc.prototype._queueSubscribe = function (wantSubscribe, callback) {
     wantSubscribe: !!wantSubscribe,
     callback: callback,
   });
+  // 刷新订阅
   this._flushSubscribe();
 };
 
+//
 Doc.prototype._flushSubscribe = function () {
   if (this.inflightSubscribe || !this.pendingSubscribe.length) return;
 
   if (this.connection.canSend) {
     this.inflightSubscribe = this.pendingSubscribe.shift();
     this.wantSubscribe = this.inflightSubscribe.wantSubscribe;
+    console.log('this.inflightSubscribe=',this.inflightSubscribe)
+    console.log('this.wantSubscribe=',this.wantSubscribe)
     if (this.wantSubscribe) {
+     // 发送动作  // 把文档注入到this.collections对象中
       this.connection.sendSubscribe(this);
     } else {
       // Be conservative about our subscription state. We'll be unsubscribed
       // some time between sending this request, and receiving the callback,
       // so let's just set ourselves to unsubscribed now.
+      //对我们的订阅状态保持保守。我们将没订阅
+      //在发送请求和接收回调之间的一段时间，
+      // 我们设自己为unsubscribed。
       this.subscribed = false;
       this.connection.sendUnsubscribe(this);
     }
@@ -666,6 +681,7 @@ Doc.prototype._otApply = function (op, source) {
           if (transformErr) return this._hardRollback(transformErr);
         }
         this._setData(this.type.apply(this.data, componentOp.op));
+        //发布
         this.emit("op", componentOp.op, source, op.src);
       }
       this.emit("op batch", op.op, source);
@@ -768,18 +784,24 @@ Doc.prototype._sendOp = function () {
 };
 
 // Queues the operation for submission to the server and applies it locally.
-//
 // Internal method called to do the actual work for submit(), create() and del().
+//将提交到服务器的操作队列化，并在本地应用。
+//为submit()， create()和del()调用的内部方法。
 // @private
-//
 // @param op
 // @param [op.op]
 // @param [op.del]
 // @param [op.create]
 // @param [callback] called when operation is submitted
-Doc.prototype._submit = function (op, source, callback) {
+Doc.prototype._submit = function (
+  op, //op操作
+  source, //当前文档对象
+  callback
+) {
   // Locally submitted ops must always have a truthy source
-  if (!source) source = true;
+  if (!source) {
+    source = true;
+  }
 
   // The op contains either op, create, delete, or none of the above (a no-op).
   if ("op" in op) {
@@ -795,7 +817,11 @@ Doc.prototype._submit = function (op, source, callback) {
       return this.emit("error", err);
     }
     // Try to normalize the op. This removes trailing skip:0's and things like that.
-    if (this.type.normalize) op.op = this.type.normalize(op.op);
+    // 调用type 方法 
+    console.log('this.type=================',this.type)
+    if (this.type.normalize) {
+      op.op = this.type.normalize(op.op);
+    }
   }
 
   try {
@@ -897,15 +923,22 @@ Doc.prototype._tryCompose = function (op) {
 // @param operation handled by the OT type
 // @param options  {source: ...}
 // @param [callback] called after operation submitted
-//
+//客户端OT入口点。
 // @fires before op, op, after op
 Doc.prototype.submitOp = function (component, options, callback) {
+  console.log("component=", component);
+  console.log("options=", options);
+  console.log("callback=", callback);
+
+  // op, { source: this }
   if (typeof options === "function") {
     callback = options;
     options = null;
   }
+
   var op = { op: component };
   var source = options && options.source;
+  // 提交op
   this._submit(op, source, callback);
 };
 

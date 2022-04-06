@@ -6,7 +6,7 @@
  * @FilePath: /sharedb/examples/modules/demo/CLI-Progress.js
  * @Description: 
  */
-const cliProgress = require('cli-progress');
+const cliProgress = require('cli-progress'); 
 
 // create a new progress bar instance and use shades_classic theme
 const bar1 = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);

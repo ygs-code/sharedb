@@ -14,7 +14,6 @@ var ERROR_CODE = ShareDBError.CODES;
 
 // 如果状态等于 0 或者 1 那么 就是在连接中
 function connectionState(socket) {
-
   if (socket.readyState === 0 || socket.readyState === 1) return "connecting";
   return "disconnected";
 }
@@ -39,28 +38,40 @@ function connectionState(socket) {
 通过socket对象创建一个连接
  */
 module.exports = Connection;
-function Connection(socket) {
+// 构造函数
+function Connection(
+  socket //socket对象
+) {
+  // 引入 events 模块 发布订阅事件
   emitter.EventEmitter.call(this);
 
   // Map of collection -> id -> doc object for created documents.
   // (created documents MUST BE UNIQUE)
+  //集合的映射-> id ->文档对象创建的文档。
+  //创建的文档必须是唯一的
   this.collections = {};
 
   // Each query and snapshot request is created with an id that the server uses when it sends us
   // info about the request (updates, etc)
+  //每个查询和快照请求都创建了一个id，当服务器发送给我们时使用这个id
+  //请求的信息(更新等)
   this.nextQueryId = 1;
   this.nextSnapshotRequestId = 1;
 
   // Map from query ID -> query object.
+  //从查询ID ->查询对象映射。
   this.queries = {};
 
   // Maps from channel -> presence objects
+  //从channel ->存在对象映射
   this._presences = {};
 
   // Map from snapshot request ID -> snapshot request
+  //映射快照请求ID ->快照请求
   this._snapshotRequests = {};
 
   // A unique message number for the given id
+  //给定id的唯一消息号
   this.seq = 1;
 
   // A unique message number for presence
@@ -75,7 +86,7 @@ function Connection(socket) {
   this.agent = null;
 
   this.debug = false;
-//获取连接状态 如果状态等于 0 或者 1 那么 就是在连接中
+  //获取连接状态 如果状态等于 0 或者 1 那么 就是在连接中
   this.state = connectionState(socket);
 
   this.bindToSocket(socket);
@@ -99,7 +110,7 @@ emitter.mixin(Connection);
  * @param socket.onmessage
  * @param socket.onerror
  */
-// 绑定 Socket 
+// 绑定 Socket
 Connection.prototype.bindToSocket = function (socket) {
   if (this.socket) {
     // 关闭连接
@@ -123,6 +134,7 @@ Connection.prototype.bindToSocket = function (socket) {
   // - 'stopped'      The connection was closed by the server, and will not reconnect
   // 获取最新的状态
   var newState = connectionState(socket);
+  // 设置socket状态
   this._setState(newState);
 
   // This is a helper variable the document uses to see whether we're
@@ -130,8 +142,9 @@ Connection.prototype.bindToSocket = function (socket) {
   this.canSend = false;
 
   var connection = this;
-
+  // 获取socket消息
   socket.onmessage = function (event) {
+    console.log("event=", event);
     try {
       var data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
@@ -140,7 +153,9 @@ Connection.prototype.bindToSocket = function (socket) {
       return;
     }
 
-    if (connection.debug) logger.info("RECV", JSON.stringify(data));
+    if (connection.debug) {
+      logger.info("RECV", JSON.stringify(data));
+    }
 
     var request = { data: data };
     connection.emit("receive", request);
@@ -155,11 +170,14 @@ Connection.prototype.bindToSocket = function (socket) {
     }
   };
 
-  // If socket is already open, do handshake immediately.
+  // If socket is already open, do handshake immediately. //如果socket已经打开，立即握手。
   if (socket.readyState === 1) {
     connection._initializeHandshake();
   }
+
+  // socket 已经连接上
   socket.onopen = function () {
+    // 设置状态
     connection._setState("connecting");
     connection._initializeHandshake();
   };
@@ -193,7 +211,9 @@ Connection.prototype.bindToSocket = function (socket) {
  * @param {object} message
  * @param {string} message.a action
  */
+// 获取消息
 Connection.prototype.handleMessage = function (message) {
+  console.log("message=", message);
   var err = null;
   if (message.error) {
     err = wrapErrorData(message.error, message);
@@ -201,6 +221,8 @@ Connection.prototype.handleMessage = function (message) {
   }
   // Switch on the message action. Most messages are for documents and are
   // handled in the doc class.
+  //打开消息动作。大多数消息都是用于文档的
+  //在doc类中处理。
   switch (message.a) {
     case "init":
       // Client initialization packet
@@ -309,11 +331,12 @@ Connection.prototype._handleBulkMessage = function (err, message, method) {
   }
 };
 
+//
 Connection.prototype._reset = function () {
   this.agent = null;
 };
 
-// Set the connection's state. The connection is basically a state machine.
+// Set the connection's state. The connection is basically a state machine. 设置连接的状态。连接基本上是一个状态机。
 Connection.prototype._setState = function (newState, reason) {
   if (this.state === newState) return;
 
@@ -345,7 +368,7 @@ Connection.prototype._setState = function (newState, reason) {
     this._reset();
   }
 
-  // Group subscribes together to help server make more efficient calls
+  // Group subscribes together to help server make more efficient calls 分组订阅可以帮助服务器进行更高效的呼叫
   this.startBulk();
   // Emit the event to all queries
   for (var id in this.queries) {
@@ -373,9 +396,12 @@ Connection.prototype._setState = function (newState, reason) {
   this.emit(newState, reason);
   this.emit("state", newState, reason);
 };
-
+// 设置批量订阅标志
 Connection.prototype.startBulk = function () {
-  if (!this.bulk) this.bulk = {};
+  // 批量订阅标志
+  if (!this.bulk) {
+    this.bulk = {};
+  }
 };
 
 Connection.prototype.endBulk = function () {
@@ -420,18 +446,32 @@ Connection.prototype._sendBulk = function (action, collection, values) {
   }
 };
 
-Connection.prototype._sendAction = function (action, doc, version) {
+// 发送动作  // 把文档注入到this.collections对象中
+Connection.prototype._sendAction = function (
+  action, // 动作
+  doc, // 文档对象
+  version
+) {
   // Ensure the doc is registered so that it receives the reply message
+
+  // 把文档注入到this.collections对象中
   this._addDoc(doc);
+
   if (this.bulk) {
-    // Bulk subscribe
+    //批量订阅
+    // Bulk subscribe  collection 文档集合key
     var actions = this.bulk[doc.collection] || (this.bulk[doc.collection] = {});
+    console.log("actions=", actions);
+    console.log("doc.collection=", actions);
+
     var versions = actions[action] || (actions[action] = {});
     var isDuplicate = versions.hasOwnProperty(doc.id);
-    versions[doc.id] = version;
-    return isDuplicate;
+    versions[doc.id] = version; // 空
+    console.log("version=", version); // 空
+    console.log("isDuplicate=", isDuplicate); // 空
+    return isDuplicate; // false
   } else {
-    // Send single doc subscribe message
+    // Send single doc subscribe message 发送单个文档订阅消息
     var message = { a: action, c: doc.collection, d: doc.id, v: version };
     this.send(message);
   }
@@ -441,8 +481,13 @@ Connection.prototype.sendFetch = function (doc) {
   return this._sendAction("f", doc, doc.version);
 };
 
+//发送订阅
 Connection.prototype.sendSubscribe = function (doc) {
-  return this._sendAction("s", doc, doc.version);
+  return this._sendAction(
+    "s",
+    doc, // 文档对象
+    doc.version //文档版本号
+  );
 };
 
 Connection.prototype.sendUnsubscribe = function (doc) {
@@ -451,6 +496,7 @@ Connection.prototype.sendUnsubscribe = function (doc) {
 
 Connection.prototype.sendOp = function (doc, op) {
   // Ensure the doc is registered so that it receives the reply message
+  // 把文档注入到this.collections对象中
   this._addDoc(doc);
   var message = {
     a: "op",
@@ -469,12 +515,15 @@ Connection.prototype.sendOp = function (doc, op) {
 };
 
 /**
- * Sends a message down the socket
+ * Sends a message down the socket 向套接字发送消息
  */
 Connection.prototype.send = function (message) {
-  if (this.debug) logger.info("SEND", JSON.stringify(message));
+  if (this.debug) {
+    logger.info("SEND", JSON.stringify(message));
+  }
 
   this.emit("send", message);
+  // 发送消息
   this.socket.send(JSON.stringify(message));
 };
 
@@ -497,13 +546,17 @@ Connection.prototype.getExisting = function (collection, id) {
  * @return {Doc}
  */
 // 集合 collection 和 文档 id
-Connection.prototype.get = function (collection, id) {
-  var docs = this.collections[collection] || (this.collections[collection] = {});
+Connection.prototype.get = function (
+  collection, //collections 集合key
+  id //文档id 集合key
+) {
+  var docs =
+    this.collections[collection] || (this.collections[collection] = {});
 
-  var doc = docs[id]; 
-  // 如果文档不存在则创建一个文档  
+  var doc = docs[id];
+  // 如果文档不存在则创建一个文档
   if (!doc) {
-    doc = docs[id] = new Doc(this, collection, id); 
+    doc = docs[id] = new Doc(this, collection, id);
     this.emit("doc", doc);
   }
 
@@ -519,7 +572,9 @@ Connection.prototype._destroyDoc = function (doc) {
   util.digAndRemove(this.collections, doc.collection, doc.id);
 };
 
+// 把文档注入到this.collections对象中
 Connection.prototype._addDoc = function (doc) {
+  // 把文档注入到this.collections对象中
   var docs = this.collections[doc.collection];
   if (!docs) {
     docs = this.collections[doc.collection] = {};
@@ -752,11 +807,19 @@ Connection.prototype._handleLegacyInit = function (message) {
   // new handshake protocol. Let's send a handshake initialize, because
   // we now know the server is ready. If we've already sent it, we'll
   // just ignore the response anyway.
-  if (message.protocolMinor) return this._initializeHandshake();
+  //如果已经设置了次要协议版本，我们希望使用
+  //新建握手协议。让我们发送一个握手初始化，因为
+  //我们现在知道服务器已经准备好了。如果我们已经发送了，我们会的
+  //忽略响应。
+  if (message.protocolMinor) {
+    // 初始化告诉服务器 客户端已经连上
+    return this._initializeHandshake();
+  }
   this._initialize(message);
 };
-
+// 初始化告诉服务器 客户端已经连上
 Connection.prototype._initializeHandshake = function () {
+  // 发送 消息
   this.send({ a: "hs", id: this.id });
 };
 
