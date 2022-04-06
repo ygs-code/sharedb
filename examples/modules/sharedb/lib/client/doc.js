@@ -449,6 +449,7 @@ Doc.prototype.fetch = function (callback) {
 };
 
 // Fetch the initial document and keep receiving updates
+//获取初始文档并保持接收更新
 Doc.prototype.subscribe = function (callback) {
   var wantSubscribe = true;
   this._queueSubscribe(wantSubscribe, callback);

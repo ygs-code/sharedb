@@ -27,6 +27,7 @@ function Presence(connection, channel) {
 emitter.mixin(Presence);
 
 Presence.prototype.subscribe = function(callback) {
+  debugger
   this._sendSubscriptionAction(true, callback);
 };
 

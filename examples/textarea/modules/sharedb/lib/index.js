@@ -1,6 +1,14 @@
+/*
+ * @Date: 2022-03-31 15:10:32
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-03-31 15:21:47
+ * @FilePath: /sharedb/examples/modules/sharedb/lib/index.js
+ * @Description: 
+ */
+debugger
 var Backend = require('./backend');
 module.exports = Backend;
-
 Backend.Agent = require('./agent');
 Backend.Backend = Backend;
 Backend.DB = require('./db');
@@ -16,3 +24,5 @@ Backend.PubSub = require('./pubsub');
 Backend.QueryEmitter = require('./query-emitter');
 Backend.SubmitRequest = require('./submit-request');
 Backend.types = require('./types');
+ 
+ 

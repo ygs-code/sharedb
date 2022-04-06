@@ -1,3 +1,4 @@
+
 # Collaborative Textarea with ShareDB
 
 This is a collaborative plain textarea using the default ShareDB JSON document
@@ -16,6 +17,8 @@ npm install
 ```
 npm run build && npm start
 ```
+
+browserify client.js -o static/bundle.js
 
 ## Run app in browser
 Load [http://localhost:8080](http://localhost:8080)

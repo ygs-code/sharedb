@@ -2,18 +2,18 @@
  * @Date: 2022-03-31 09:46:25
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-04-02 18:59:41
+ * @LastEditTime: 2022-04-06 13:04:25
  * @FilePath: /sharedb/examples/textarea/client.js
  * @Description:
  */
 
 // sharedb 协同
-import sharedb from "sharedb/lib/client"; 
+var sharedb = require("./modules/sharedb/lib/client");
 // websocket 连接
-import ReconnectingWebSocket from "reconnecting-websocket"; 
+var ReconnectingWebSocket = require("./modules/reconnecting-websocket");
 
-// 绑定
-var StringBinding = require("sharedb-string-binding");
+//给input添加onChange事件，触发onChange事件 变成op，调用sharedb 发布op消息
+var StringBinding = require("./modules/sharedb-string-binding");
 // socket
 var socket = new ReconnectingWebSocket("ws://" + window.location.host);
 
@@ -43,11 +43,17 @@ socket.addEventListener("error", function () {
 });
 
 // Create local Doc instance mapped to 'examples' collection document with id 'textarea'
-//创建本地文档实例映射到id为“textarea”的“examples”集合文档  
+//创建本地文档实例映射到id为“textarea”的“examples”集合文档
+// 获取到文档对象
 var doc = connection.get("examples", "textarea");
+console.log("doc.subscribe=", doc.subscribe);
+// 获取到文档对象
 doc.subscribe(function (err) {
-  if (err) throw err;
-
+  if (err) {
+    throw err;
+  }
+  //绑定 input 事件
   var binding = new StringBinding(element, doc, ["content"]);
+  // 初始化
   binding.setup();
 });
