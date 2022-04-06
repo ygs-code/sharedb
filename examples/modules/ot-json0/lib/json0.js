@@ -135,16 +135,22 @@ json.checkObj = function (elem) {
 
 // helper functions to convert old string ops to and from subtype ops
 // 用于将旧字符串操作与子类型操作进行转换的辅助函数
-function convertFromText(c) {
+function convertFromText (c) {
   c.t = "text0";
-  var o = { p: c.p.pop() };
-  if (c.si != null) o.i = c.si;
-  if (c.sd != null) o.d = c.sd;
+  var o = {
+     p: c.p.pop()
+  };
+  if (c.si != null) {
+    o.i = c.si;
+  }
+  if (c.sd != null) {
+    o.d = c.sd;
+  }
   c.o = [o];
 }
 
 //转换为文本
-function convertToText(c) {
+function convertToText (c) {
   c.p.push(c.o[0].p);
   if (c.o[0].i != null) c.si = c.o[0].i;
   if (c.o[0].d != null) c.sd = c.o[0].d;
@@ -283,19 +289,31 @@ var pathMatches = (json.pathMatches = function (p1, p2, ignoreLast) {
   return true;
 });
 
-json.append = function (dest, c) {
+json.append = function (
+  dest, // 新的op
+  c  // 来源op {}
+) {
+
+  console.log('c=', c)
+  // 深度拷贝
   c = clone(c);
 
   if (dest.length === 0) {
     dest.push(c);
     return;
   }
-
+  //如果  dest 有数据 获取最后一个
   var last = dest[dest.length - 1];
 
   // convert old string ops to use subtype for backwards compatibility
-  if ((c.si != null || c.sd != null) && (last.si != null || last.sd != null)) {
+  // 为了向后兼容，将旧的字符串操作转换为使用子类型  
+  if (
+    (c.si != null || c.sd != null) &&
+    (last.si != null || last.sd != null)
+  ) {
+    // 用于将旧字符串操作与子类型操作进行转换的辅助函数
     convertFromText(c);
+    // 用于将旧字符串操作与子类型操作进行转换的辅助函数
     convertFromText(last);
   }
 
@@ -380,15 +398,18 @@ json.compose = function (op1, op2) {
   return newOp;
 };
 
+// 序列化op
 json.normalize = function (op) {
+  console.log('normalize=', op)
   var newOp = [];
 
   op = isArray(op) ? op : [op];
 
   for (var i = 0; i < op.length; i++) {
     var c = op[i];
-    if (c.p == null) c.p = [];
-
+    if (c.p == null) {
+      c.p = [];
+    }
     json.append(newOp, c);
   }
 

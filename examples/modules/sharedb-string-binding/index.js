@@ -170,7 +170,7 @@ StringBinding.prototype._insert = function (
   var op = { p: path, si: text };
   console.log("op=", op);
   console.log('this.doc.submitOp=',this.doc.submitOp)
-  // 广播
+  // 广播 给服务器 发送websocket
   this.doc.submitOp(op, { source: this });
 };
 
