@@ -6,7 +6,7 @@
  * @FilePath: /sharedb/examples/modules/sharedb/lib/index.js
  * @Description: 
  */
-debugger
+ 
 var Backend = require('./backend');
 module.exports = Backend;
 Backend.Agent = require('./agent');

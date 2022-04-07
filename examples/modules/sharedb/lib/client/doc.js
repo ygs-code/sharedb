@@ -8,12 +8,12 @@ var ShareDBError = require("../error");
 var types = require("../types");
 var util = require("../util");
 var clone = util.clone;
-// 深度比较两个数据是否相同 
+// 深度比较两个数据是否相同
 var deepEqual = require("../../../fast-deep-equal");
 
 var ERROR_CODE = ShareDBError.CODES;
 
-console.log("types=", types);
+// console.log("types=", types);
 /**
  * A Doc is a client's view on a sharejs document.
  *
@@ -58,7 +58,7 @@ console.log("types=", types);
 
 module.exports = Doc;
 // 文档构造函数
-function Doc (
+function Doc(
   // this, collection, id
   connection, // 连接实例
   collection, // 文档集合key
@@ -76,7 +76,7 @@ function Doc (
   this.data = undefined;
 
   // Array of callbacks or nulls as placeholders
-  //作为占位符的回调数组或空数组  
+  //作为占位符的回调数组或空数组
   this.inflightFetch = [];
   this.inflightSubscribe = null;
   this.pendingFetch = [];
@@ -85,34 +85,34 @@ function Doc (
   // Whether we think we are subscribed on the server. Synchronously set to
   // false on calls to unsubscribe and disconnect. Should never be true when
   // this.wantSubscribe is false
-  //是否认为我们已经在服务器上订阅了。 同步设置为  
-  // false用于取消订阅和断开连接。 什么时候不应该是真的  
-  //这个。 wantSubscribe是假的  
+  //是否认为我们已经在服务器上订阅了。 同步设置为
+  // false用于取消订阅和断开连接。 什么时候不应该是真的
+  //这个。 wantSubscribe是假的
   this.subscribed = false;
   // Whether to re-establish the subscription on reconnect
-  //重新连接时是否重新建立订阅  
+  //重新连接时是否重新建立订阅
   this.wantSubscribe = false;
 
   // The op that is currently roundtripping to the server, or null.
   // When the connection reconnects, the inflight op is resubmitted.
   // This has the same format as an entry in pendingOps
-  //当前往返于服务器的op，或null。  
-  //当连接重新连接时，flight op被重新提交。  
-  //它的格式与pendingOps中的条目相同  
+  //当前往返于服务器的op，或null。
+  //当连接重新连接时，flight op被重新提交。
+  //它的格式与pendingOps中的条目相同
   this.inflightOp = null;
 
   // All ops that are waiting for the server to acknowledge this.inflightOp
   // This used to just be a single operation, but creates & deletes can't be
   // composed with regular operations.
-  //所有等待服务器确认的操作  
-  //这曾经只是一个单一的操作，但创建和删除不能  
-  //由常规操作组成。  
+  //所有等待服务器确认的操作
+  //这曾经只是一个单一的操作，但创建和删除不能
+  //由常规操作组成。
   // This is a list of {[create:{...}], [del:true], [op:...], callbacks:[...]}
   // 这是一个列表 {[create:{...}], [del:true], [op:...], callbacks:[...]}
   this.pendingOps = [];
 
   // The OT type of this document. An uncreated document has type `null`
-  //本文档的OT类型。 未创建的文档类型为' null '  
+  //本文档的OT类型。 未创建的文档类型为' null '
   this.type = null;
 
   // The applyStack enables us to track any ops submitted while we are
@@ -120,41 +120,41 @@ function Doc (
   // performing an incremental apply and null otherwise. When it is an array,
   // all submitted ops should be pushed onto it. The `_otApply` method will
   // reset it back to null when all incremental apply loops are complete.
-  // applyStack允许我们跟踪任何提交的操作  
-  //增量地应用op。 这个值是一个数组  
-  //执行增量应用，否则为空。 当它是一个数组时，  
-  //所有提交的操作应该被推到它。 ' _otApply '方法将  
-  //当所有增量应用循环完成时，将其重置为null。  
+  // applyStack允许我们跟踪任何提交的操作
+  //增量地应用op。 这个值是一个数组
+  //执行增量应用，否则为空。 当它是一个数组时，
+  //所有提交的操作应该被推到它。 ' _otApply '方法将
+  //当所有增量应用循环完成时，将其重置为null。
   this.applyStack = null;
 
   // Disable the default behavior of composing submitted ops. This is read at
   // the time of op submit, so it may be toggled on before submitting a
   // specifc op and toggled off afterward
-  //关闭提交操作的缺省组合行为。 请参阅  
-  // op的提交时间，因此它可以在提交a之前被打开  
-  //指定的操作，并在之后关闭  
+  //关闭提交操作的缺省组合行为。 请参阅
+  // op的提交时间，因此它可以在提交a之前被打开
+  //指定的操作，并在之后关闭
   this.preventCompose = false;
 
   // If set to true, the source will be submitted over the connection. This
   // will also have the side-effect of only composing ops whose sources are
   // equal
-  //如果设置为true，源将通过连接提交。 这  
-  //也会有副作用，只组合的源是  
-  //平等  
+  //如果设置为true，源将通过连接提交。 这
+  //也会有副作用，只组合的源是
+  //平等
   this.submitSource = false;
 
   // Prevent own ops being submitted to the server. If subscribed, remote
   // ops are still received. Should be toggled through the pause() and
   // resume() methods to correctly flush on resume.
-  //防止自己的操作被提交到服务器。 如果超额认购,远程  
-  // ops仍然被接收。 应该通过pause()和  
-  // resume()方法正确刷新简历。  
+  //防止自己的操作被提交到服务器。 如果超额认购,远程
+  // ops仍然被接收。 应该通过pause()和
+  // resume()方法正确刷新简历。
   this.paused = false;
 
   // Internal counter that gets incremented every time doc.data is updated.
   // Used as a cheap way to check if doc.data has changed.
-  //内部计数器，每次增加doc。 数据更新。  
-  //作为一种廉价的方法来检查doc。 数据已经改变了。  
+  //内部计数器，每次增加doc。 数据更新。
+  //作为一种廉价的方法来检查doc。 数据已经改变了。
   this._dataStateVersion = 0;
 }
 emitter.mixin(Doc);
@@ -215,6 +215,7 @@ Doc.prototype._setType = function (newType) {
 };
 
 Doc.prototype._setData = function (data) {
+  console.log('data==========',data)
   this.data = data;
   this._dataStateVersion++;
 };
@@ -257,9 +258,9 @@ Doc.prototype.ingestSnapshot = function (snapshot, callback) {
       var err = new ShareDBError(
         ERROR_CODE.ERR_DOC_MISSING_VERSION,
         "Cannot ingest snapshot in doc with null version. " +
-        this.collection +
-        "." +
-        this.id
+          this.collection +
+          "." +
+          this.id
       );
       if (callback) return callback(err);
       return this.emit("error", err);
@@ -526,8 +527,8 @@ Doc.prototype._flushSubscribe = function () {
   if (this.connection.canSend) {
     this.inflightSubscribe = this.pendingSubscribe.shift();
     this.wantSubscribe = this.inflightSubscribe.wantSubscribe;
-    console.log('this.inflightSubscribe=', this.inflightSubscribe)
-    console.log('this.wantSubscribe=', this.wantSubscribe)
+    console.log("this.inflightSubscribe=", this.inflightSubscribe);
+    console.log("this.wantSubscribe=", this.wantSubscribe);
     if (this.wantSubscribe) {
       // 发送动作  // 把文档注入到this.collections对象中
       this.connection.sendSubscribe(this);
@@ -556,7 +557,7 @@ Doc.prototype._flushSubscribe = function () {
   }
 };
 
-function pushActionCallback (inflight, isDuplicate, callback) {
+function pushActionCallback(inflight, isDuplicate, callback) {
   if (isDuplicate) {
     var lastCallback = inflight.pop();
     inflight.push(function (err) {
@@ -568,7 +569,7 @@ function pushActionCallback (inflight, isDuplicate, callback) {
   }
 }
 
-function combineCallbacks (callbacks) {
+function combineCallbacks(callbacks) {
   callbacks = callbacks.filter(util.truthy);
   if (!callbacks.length) return null;
   return function (error) {
@@ -593,14 +594,14 @@ Doc.prototype.flush = function () {
 };
 
 // Helper function to set op to contain a no-op.
-function setNoOp (op) {
+function setNoOp(op) {
   delete op.op;
   delete op.create;
   delete op.del;
 }
 
 // Transform server op data by a client op, and vice versa. Ops are edited in place.
-function transformX (client, server) {
+function transformX(client, server) {
   // Order of statements in this function matters. Be especially careful if
   // refactoring this function
 
@@ -672,15 +673,18 @@ Doc.prototype._otApply = function (op, source) {
       throw new ShareDBError(
         ERROR_CODE.ERR_DOC_DOES_NOT_EXIST,
         "Cannot apply op to uncreated document. " +
-        this.collection +
-        "." +
-        this.id
+          this.collection +
+          "." +
+          this.id
       );
     }
 
     // NB: If we need to add another argument to this event, we should consider
     // the fact that the 'op' event has op.src as its 3rd argument
+    //注:如果我们需要添加另一个参数到这个事件，我们应该考虑
+    // 'op'事件的第3个参数是op.src
     this.emit("before op batch", op.op, source);
+    
 
     // Iteratively apply multi-component remote operations and rollback ops
     // (source === false) for the default JSON0 OT type. It could use
@@ -697,6 +701,20 @@ Doc.prototype._otApply = function (op, source) {
     // that the snapshot only include updates from the particular op component
     // at the time of emission. Eliminating this would require rethinking how
     // such external bindings are implemented.
+    //迭代应用多组件远程操作和回滚操作
+    // (source === = false)用于默认JSON0 OT类型。它可以使用
+    // type.shatter()，但由于这段代码是如此特定于
+    // JSON0类型和ShareDB显式绑定默认类型，我们可以
+    //我们将这样写，并保存需要遍历操作
+    //组件的两倍。
+    //理想情况下，我们不需要这种额外的复杂性。然而,它是
+    //帮助实现更新DOM节点和其他的绑定
+    //通过将op事件直接转换为相应的有状态对象
+    //突变。这样的绑定最容易编写为响应
+    //每次一个单独的op组件，它是重要的
+    //快照只包含来自特定op组件的更新
+    //在发射时。要消除这种情况，就需要重新思考如何去做
+    //这样的外部绑定被实现。
     if (!source && this.type === types.defaultType && op.op.length > 1) {
       if (!this.applyStack) {
         this.applyStack = [];
@@ -714,7 +732,11 @@ Doc.prototype._otApply = function (op, source) {
           var transformErr = transformX(this.applyStack[j], componentOp);
           if (transformErr) return this._hardRollback(transformErr);
         }
+        console.log('this.data=========',this.data)
+        console.log('componentOp.op=========',componentOp.op)
+        console.log('this.type.apply(this.data, componentOp.op)=========',this.type.apply(this.data, componentOp.op))
         this._setData(this.type.apply(this.data, componentOp.op));
+        
         //发布
         this.emit("op", componentOp.op, source, op.src);
       }
@@ -726,8 +748,10 @@ Doc.prototype._otApply = function (op, source) {
 
     // The 'before op' event enables clients to pull any necessary data out of
     // the snapshot before it gets changed
+    
     this.emit("before op", op.op, source, op.src);
     // Apply the operation to the local data, mutating it in place
+    
     this._setData(this.type.apply(this.data, op.op));
     // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with
@@ -735,7 +759,9 @@ Doc.prototype._otApply = function (op, source) {
     // For ops from other clients, this will be after the op has been
     // committed to the database and published
     this.emit("op", op.op, source, op.src);
+   
     this.emit("op batch", op.op, source);
+    
     return;
   }
 
@@ -808,7 +834,7 @@ Doc.prototype._sendOp = function () {
 
     op.seq = this.connection.seq++;
   }
-
+   // 发送op给服务器
   this.connection.sendOp(this, op);
 
   // src isn't needed on the first try, since the server session will have the
@@ -828,13 +854,11 @@ Doc.prototype._sendOp = function () {
 // @param [op.create]
 // @param [callback] called when operation is submitted
 
-
 Doc.prototype._submit = function (
   op, //op操作
   source, //source: StringBinding 实例对象
-  callback// 回调函数 
+  callback // 回调函数
 ) {
-
   // Locally submitted ops must always have a truthy source
   if (!source) {
     source = true;
@@ -846,9 +870,9 @@ Doc.prototype._submit = function (
       var err = new ShareDBError(
         ERROR_CODE.ERR_DOC_DOES_NOT_EXIST,
         "Cannot submit op. Document has not been created. " +
-        this.collection +
-        "." +
-        this.id
+          this.collection +
+          "." +
+          this.id
       );
       if (callback) {
         return callback(err);
@@ -856,8 +880,8 @@ Doc.prototype._submit = function (
       return this.emit("error", err);
     }
     // Try to normalize the op. This removes trailing skip:0's and things like that.
-    // 调用type 方法 
-    console.log('this.type=================', this.type)
+    // 调用type 方法
+    console.log("this.type=================", this.type);
     if (this.type.normalize) {
       op.op = this.type.normalize(op.op);
     }
@@ -867,10 +891,10 @@ Doc.prototype._submit = function (
     this._pushOp(
       op, //op操作
       source, //source: StringBinding 实例对象
-      callback// 回调函数 
+      callback // 回调函数
     );
     this._otApply(
-      op,//op操作
+      op, //op操作
       source //source: StringBinding 实例对象
     );
   } catch (error) {
@@ -881,33 +905,35 @@ Doc.prototype._submit = function (
   // synchronously, all the ops are combined before being sent to the server.
   var doc = this;
   util.nextTick(function () {
+    // 发送op给服务器
     doc.flush();
   });
 };
 
+// 把op插入到 this.pendingOps 队列中
 Doc.prototype._pushOp = function (
-  op,  // op
+  op, // op
   source, //source: StringBinding 实例对象
   callback
 ) {
   op.source = source;
-  console.log('this.applyStack=', this.applyStack)
+  console.log("this.applyStack=", this.applyStack);
 
   if (this.applyStack) {
     // If we are in the process of incrementally applying an operation, don't
     // compose the op and push it onto the applyStack so it can be transformed
     // against other components from the op or ops being applied
-    //如果我们在增量应用一个操作的过程中，不要  
-    //组合op并将其推到applyStack中，这样它就可以被转换  
-    //对其他组件的操作或操作应用  
+    //如果我们在增量应用一个操作的过程中，不要
+    //组合op并将其推到applyStack中，这样它就可以被转换
+    //对其他组件的操作或操作应用
     this.applyStack.push(op);
   } else {
     // If the type supports composes, try to compose the operation onto the
     // end of the last pending operation.
-    //如果该类型支持组合操作，则尝试将操作组合到  
+    //如果该类型支持组合操作，则尝试将操作组合到
     //最后一个挂起的操作结束。
     var composed = this._tryCompose(op);
-    debugger;
+
     if (composed) {
       composed.callbacks.push(callback);
       return;
@@ -916,7 +942,10 @@ Doc.prototype._pushOp = function (
   // Push on to the pendingOps queue of ops to submit if we didn't compose
   op.type = this.type;
   op.callbacks = [callback];
+  // 插入到一个队列中
   this.pendingOps.push(op);
+  console.log("this.pendingOps=", this.pendingOps);
+  
 };
 
 Doc.prototype._popApplyStack = function (to) {
@@ -947,28 +976,30 @@ Doc.prototype._popApplyStack = function (to) {
 
 // Try to compose a submitted op into the last pending op. Returns the
 // composed op if it succeeds, undefined otherwise
-//尝试将提交的操作组合到最后一个挂起的操作中  
-//如果成功则为composed op，否则为undefined  
+//尝试将提交的操作组合到最后一个挂起的操作中
+//如果成功则为composed op，否则为undefined
 Doc.prototype._tryCompose = function (op) {
-  console.log('this.preventCompose=', this.preventCompose)
+  console.log("this.preventCompose=", this.preventCompose);
   if (this.preventCompose) {
     return;
   }
 
   // We can only compose into the last pending op. Inflight ops have already
   // been sent to the server, so we can't modify them
-  //我们只能写入最后一个未完成的任务，而飞行任务已经完成  
-  //已经发送到服务器，所以我们不能修改它们  
+  //我们只能写入最后一个未完成的任务，而飞行任务已经完成
+  //已经发送到服务器，所以我们不能修改它们
   var last = this.pendingOps[this.pendingOps.length - 1];
+  console.log("last============", last);
+  console.log("this.pendingOps=======", this.pendingOps);
   if (!last || last.sentAt) {
     return;
   }
 
   // If we're submitting the op source, we can only combine ops that have
   // a matching source
-  //如果提交的是op source，则只能组合具有  
-  //匹配源  
-  console.log('this.submitSource=', this.submitSource)
+  //如果提交的是op source，则只能组合具有
+  //匹配源
+  console.log("this.submitSource=", this.submitSource);
   if (this.submitSource && !deepEqual(op.source, last.source)) {
     return;
   }
@@ -998,8 +1029,8 @@ Doc.prototype._tryCompose = function (op) {
 //客户端OT入口点。
 // @fires before op, op, after op
 Doc.prototype.submitOp = function (
-  component,　　// op
-  options, //    { source: StringBinding 实例对象 }  
+  component, // op
+  options, //    { source: StringBinding 实例对象 }
   callback
 ) {
   console.log("component=", component);
@@ -1015,8 +1046,8 @@ Doc.prototype.submitOp = function (
   var source = options && options.source;
   // 提交op
   this._submit(
-    op, 　// 操作op
-    source,  //source: StringBinding 实例对象
+    op, // 操作op
+    source, //source: StringBinding 实例对象
     callback // 回调函数 空
   );
 };
@@ -1111,9 +1142,9 @@ Doc.prototype._opAcknowledged = function (message) {
     // have sent all the ops that have happened before acknowledging our op
     logger.warn(
       "Invalid version from server. Expected: " +
-      this.version +
-      " Received: " +
-      message.v,
+        this.version +
+        " Received: " +
+        message.v,
       message
     );
 

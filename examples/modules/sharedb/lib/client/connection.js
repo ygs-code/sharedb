@@ -494,6 +494,7 @@ Connection.prototype.sendUnsubscribe = function (doc) {
   return this._sendAction("u", doc);
 };
 
+// 发送op给服务器
 Connection.prototype.sendOp = function (doc, op) {
   // Ensure the doc is registered so that it receives the reply message
   // 把文档注入到this.collections对象中
@@ -511,6 +512,8 @@ Connection.prototype.sendOp = function (doc, op) {
   if (op.create) message.create = op.create;
   if (op.del) message.del = op.del;
   if (doc.submitSource) message.x.source = op.source;
+  console.log('message=',message)
+  debugger
   this.send(message);
 };
 

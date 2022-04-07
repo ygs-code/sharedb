@@ -2,7 +2,7 @@
  * @Date: 2022-03-31 16:07:41
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-03-31 17:40:08
+ * @LastEditTime: 2022-04-07 17:01:15
  * @FilePath: /sharedb/examples/modules/ot-json0/lib/bootstrapTransform.js
  * @Description: 
  */
@@ -70,6 +70,7 @@ function bootstrapTransform(type, transformComponent, checkValidOp, append) {
 
   // Transforms op with specified type ('left' or 'right') by otherOp.
   type.transform = function(op, otherOp, type) {
+    // debugger;
     if (!(type === 'left' || type === 'right'))
       throw new Error("type must be 'left' or 'right'");
 

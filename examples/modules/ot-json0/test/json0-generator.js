@@ -1,180 +1,250 @@
-var json0 = require ('../lib/json0')
-var {randomInt, randomReal, randomWord} = require ('ot-fuzzer')
+var clone,
+  genRandomOp,
+  json0,
+  randomInt,
+  randomKey,
+  randomNewKey,
+  randomPath,
+  randomReal,
+  randomThing,
+  randomWord,
+  _ref;
 
-// # This is an awful function to clone a document snapshot for use by the random
-// # op generator. .. Since we don't want to corrupt the original object with
-// # the changes the op generator will make.
-var clone = (o) => JSON.parse(JSON.stringify(o))
+json0 = require("../lib/json0");
 
-randomKey = (obj) =>{
-  if （Array.isArray(obj)){
-    if (obj.length == 0)
-      {undefined}
-    else{ randomInt (obj.length)}
+(_ref = require("ot-fuzzer")),
+  (randomInt = _ref.randomInt),
+  (randomReal = _ref.randomReal),
+  (randomWord = _ref.randomWord);
+
+clone = function (o) {
+  return JSON.parse(JSON.stringify(o));
+};
+
+randomKey = function (obj) {
+  var count, key, result;
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) {
+      return void 0;
+    } else {
+      return randomInt(obj.length);
+    }
+  } else {
+    count = 0;
+    for (key in obj) {
+      if (randomReal() < 1 / ++count) {
+        result = key;
+      }
+    }
+    return result;
   }
-  else{
-    count = 0
+};
 
-    for(let key of obj) {
+randomNewKey = function (obj) {
+  var key;
+  key = randomWord();
+  while (obj[key] !== void 0) {
+    key = randomWord();
+  }
+  return key;
+};
 
-   
-      result = key 
-      if (randomReal()< 1/++count)
+randomThing = function () {
+  var obj, _i, _j, _ref1, _ref2, _results;
+  switch (randomInt(6)) {
+    case 0:
+      return null;
+    case 1:
+      return "";
+    case 2:
+      return randomWord();
+    case 3:
+      obj = {};
+      for (
+        _i = 1, _ref1 = randomInt(5);
+        1 <= _ref1 ? _i <= _ref1 : _i >= _ref1;
+        1 <= _ref1 ? _i++ : _i--
+      ) {
+        obj[randomNewKey(obj)] = randomThing();
+      }
+      return obj;
+    case 4:
+      _results = [];
+      for (
+        _j = 1, _ref2 = randomInt(5);
+        1 <= _ref2 ? _j <= _ref2 : _j >= _ref2;
+        1 <= _ref2 ? _j++ : _j--
+      ) {
+        _results.push(randomThing());
+      }
+      return _results;
+    case 5:
+      return randomInt(50);
+  }
+};
+
+randomPath = function (data) {
+  var key, path;
+  path = [];
+  while (randomReal() > 0.85 && typeof data === "object") {
+    key = randomKey(data);
+    if (key == null) {
+      break;
+    }
+    path.push(key);
+    data = data[key];
+  }
+  return path;
+};
+
+module.exports = genRandomOp = function (data) {
+  var c,
+    container,
+    inc,
+    k,
+    key,
+    length,
+    newIndex,
+    newValue,
+    obj,
+    op,
+    operand,
+    p,
+    parent,
+    path,
+    pct,
+    pos,
+    str,
+    subOp;
+  pct = 0.95;
+  container = {
+    data: clone(data),
+  };
+  op = (function () {
+    var _i, _len, _results;
+    _results = [];
+    while (randomReal() < pct) {
+      pct *= 0.6;
+      path = randomPath(container["data"]);
+      parent = container;
+      key = "data";
+      for (_i = 0, _len = path.length; _i < _len; _i++) {
+        p = path[_i];
+        parent = parent[key];
+        key = p;
+      }
+      operand = parent[key];
+      if (randomReal() < 0.4 && parent !== container && Array.isArray(parent)) {
+        newIndex = randomInt(parent.length);
+        parent.splice(key, 1);
+        parent.splice(newIndex, 0, operand);
+        _results.push({
+          p: path,
+          lm: newIndex,
+        });
+      } else if (randomReal() < 0.3 || operand === null) {
+        newValue = randomThing();
+        parent[key] = newValue;
+        if (Array.isArray(parent)) {
+          _results.push({
+            p: path,
+            ld: operand,
+            li: clone(newValue),
+          });
+        } else {
+          _results.push({
+            p: path,
+            od: operand,
+            oi: clone(newValue),
+          });
         }
-  }
-}
-# Generate a random new key for a value in obj.
-# obj must be an Object.
-randomNewKey = (obj) ->
-  # There's no do-while loop in coffeescript.
-  key = randomWord()
-  key = randomWord() while obj[key] != undefined
-  key
-
-# Generate a random object
-randomThing = ->
-  switch randomInt 6
-    when 0 then null
-    when 1 then ''
-    when 2 then randomWord()
-    when 3
-      obj = {}
-      obj[randomNewKey(obj)] = randomThing() for [1..randomInt(5)]
-      obj
-    when 4 then (randomThing() for [1..randomInt(5)])
-    when 5 then randomInt(50)
-
-# Pick a random path to something in the object.
-randomPath = (data) ->
-  path = []
-
-  while randomReal() > 0.85 and typeof data == 'object'
-    key = randomKey data
-    break unless key?
-
-    path.push key
-    data = data[key]
-
-  path
-
-
-module.exports = genRandomOp = (data) ->
-  pct = 0.95
-
-  container = data: clone data
-
-  op = while randomReal() < pct
-    pct *= 0.6
-
-    # Pick a random object in the document operate on.
-    path = randomPath(container['data'])
-
-    # parent = the container for the operand. parent[key] contains the operand.
-    parent = container
-    key = 'data'
-    for p in path
-      parent = parent[key]
-      key = p
-    operand = parent[key]
-
-    if randomReal() < 0.4 and parent != container and Array.isArray(parent)
-      # List move
-      newIndex = randomInt parent.length
-
-      # Remove the element from its current position in the list
-      parent.splice key, 1
-      # Insert it in the new position.
-      parent.splice newIndex, 0, operand
-
-      {p:path, lm:newIndex}
-
-    else if randomReal() < 0.3 or operand == null
-      # Replace
-
-      newValue = randomThing()
-      parent[key] = newValue
-
-      if Array.isArray(parent)
-        {p:path, ld:operand, li:clone(newValue)}
-      else
-        {p:path, od:operand, oi:clone(newValue)}
-
-    else if typeof operand == 'string'
-      # String. This code is adapted from the text op generator.
-
-      if randomReal() > 0.5 or operand.length == 0
-        # Insert
-        pos = randomInt(operand.length + 1)
-        str = randomWord() + ' '
-
-        path.push pos
-        parent[key] = operand[...pos] + str + operand[pos..]
-        c = {p:path, si:str}
-      else
-        # Delete
-        pos = randomInt(operand.length)
-        length = Math.min(randomInt(4), operand.length - pos)
-        str = operand[pos...(pos + length)]
-
-        path.push pos
-        parent[key] = operand[...pos] + operand[pos + length..]
-        c = {p:path, sd:str}
-
-      if json0._testStringSubtype
-        # Subtype
-        subOp = {p:path.pop()}
-        if c.si?
-          subOp.i = c.si
-        else
-          subOp.d = c.sd
-
-        c = {p:path, t:'text0', o:[subOp]}
-
-      c
-
-    else if typeof operand == 'number'
-      # Number
-      inc = randomInt(10) - 3
-      parent[key] += inc
-      {p:path, na:inc}
-
-    else if Array.isArray(operand)
-      # Array. Replace is covered above, so we'll just randomly insert or delete.
-      # This code looks remarkably similar to string insert, above.
-
-      if randomReal() > 0.5 or operand.length == 0
-        # Insert
-        pos = randomInt(operand.length + 1)
-        obj = randomThing()
-
-        path.push pos
-        operand.splice pos, 0, obj
-        {p:path, li:clone(obj)}
-      else
-        # Delete
-        pos = randomInt operand.length
-        obj = operand[pos]
-
-        path.push pos
-        operand.splice pos, 1
-        {p:path, ld:clone(obj)}
-    else
-      # Object
-      k = randomKey(operand)
-
-      if randomReal() > 0.5 or not k?
-        # Insert
-        k = randomNewKey(operand)
-        obj = randomThing()
-
-        path.push k
-        operand[k] = obj
-        {p:path, oi:clone(obj)}
-      else
-        obj = operand[k]
-
-        path.push k
-        delete operand[k]
-        {p:path, od:clone(obj)}
-
-  [op, container.data]
+      } else if (typeof operand === "string") {
+        if (randomReal() > 0.5 || operand.length === 0) {
+          pos = randomInt(operand.length + 1);
+          str = randomWord() + " ";
+          path.push(pos);
+          parent[key] = operand.slice(0, pos) + str + operand.slice(pos);
+          c = {
+            p: path,
+            si: str,
+          };
+        } else {
+          pos = randomInt(operand.length);
+          length = Math.min(randomInt(4), operand.length - pos);
+          str = operand.slice(pos, pos + length);
+          path.push(pos);
+          parent[key] = operand.slice(0, pos) + operand.slice(pos + length);
+          c = {
+            p: path,
+            sd: str,
+          };
+        }
+        if (json0._testStringSubtype) {
+          subOp = {
+            p: path.pop(),
+          };
+          if (c.si != null) {
+            subOp.i = c.si;
+          } else {
+            subOp.d = c.sd;
+          }
+          c = {
+            p: path,
+            t: "text0",
+            o: [subOp],
+          };
+        }
+        _results.push(c);
+      } else if (typeof operand === "number") {
+        inc = randomInt(10) - 3;
+        parent[key] += inc;
+        _results.push({
+          p: path,
+          na: inc,
+        });
+      } else if (Array.isArray(operand)) {
+        if (randomReal() > 0.5 || operand.length === 0) {
+          pos = randomInt(operand.length + 1);
+          obj = randomThing();
+          path.push(pos);
+          operand.splice(pos, 0, obj);
+          _results.push({
+            p: path,
+            li: clone(obj),
+          });
+        } else {
+          pos = randomInt(operand.length);
+          obj = operand[pos];
+          path.push(pos);
+          operand.splice(pos, 1);
+          _results.push({
+            p: path,
+            ld: clone(obj),
+          });
+        }
+      } else {
+        k = randomKey(operand);
+        if (randomReal() > 0.5 || k == null) {
+          k = randomNewKey(operand);
+          obj = randomThing();
+          path.push(k);
+          operand[k] = obj;
+          _results.push({
+            p: path,
+            oi: clone(obj),
+          });
+        } else {
+          obj = operand[k];
+          path.push(k);
+          delete operand[k];
+          _results.push({
+            p: path,
+            od: clone(obj),
+          });
+        }
+      }
+    }
+    return _results;
+  })();
+  return [op, container.data];
+};

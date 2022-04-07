@@ -1,3 +1,11 @@
+/*
+ * @Date: 2022-03-31 15:10:32
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-04-07 18:09:46
+ * @FilePath: /sharedb/examples/modules/sharedb/lib/stream-socket.js
+ * @Description: 
+ */
 var Duplex = require('stream').Duplex;
 var inherits = require('util').inherits;
 var logger = require('./logger');
@@ -47,6 +55,7 @@ function ServerStream(socket) {
     socket.close('stopped');
   });
 }
+
 inherits(ServerStream, Duplex);
 
 ServerStream.prototype.isServer = true;

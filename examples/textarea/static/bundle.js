@@ -9496,6 +9496,7 @@ Doc.prototype._otApply = function(op, source) {
         // Apply the individual op component
         this.emit('before op', componentOp.op, source, op.src);
         this.data = this.type.apply(this.data, componentOp.op);
+        //
         this.emit('op', componentOp.op, source, op.src);
       }
       this.emit('op batch', op.op, source);

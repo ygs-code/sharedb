@@ -135,10 +135,10 @@ json.checkObj = function (elem) {
 
 // helper functions to convert old string ops to and from subtype ops
 // 用于将旧字符串操作与子类型操作进行转换的辅助函数
-function convertFromText (c) {
+function convertFromText(c) {
   c.t = "text0";
   var o = {
-     p: c.p.pop()
+    p: c.p.pop(),
   };
   if (c.si != null) {
     o.i = c.si;
@@ -150,18 +150,27 @@ function convertFromText (c) {
 }
 
 //转换为文本
-function convertToText (c) {
+function convertToText(c) {
   c.p.push(c.o[0].p);
-  if (c.o[0].i != null) c.si = c.o[0].i;
-  if (c.o[0].d != null) c.sd = c.o[0].d;
+  if (c.o[0].i != null) {
+    c.si = c.o[0].i;
+  }
+  if (c.o[0].d != null) {
+    c.sd = c.o[0].d;
+  }
   delete c.t;
   delete c.o;
 }
 
-//
+//合并
 json.apply = function (snapshot, op) {
+  console.log('snapshot=======',snapshot)
+  console.log('op=======',op)
+  
+   
+  //校验 op
   json.checkValidOp(op);
-
+  // 克隆op
   op = clone(op);
 
   var container = {
@@ -171,7 +180,7 @@ json.apply = function (snapshot, op) {
   for (var i = 0; i < op.length; i++) {
     var c = op[i];
 
-    // convert old string ops to use subtype for backwards compatibility
+    // convert old string ops to use subtype for backwards compatibility 为了向后兼容，将旧的字符串操作转换为使用子类型
     if (c.si != null || c.sd != null) convertFromText(c);
 
     var parent = null;
@@ -187,7 +196,9 @@ json.apply = function (snapshot, op) {
       elem = elem[key];
       key = p;
 
-      if (parent == null) throw new Error("Path invalid");
+      if (parent == null) {
+        throw new Error("Path invalid");
+      }
     }
 
     // handle subtype ops
@@ -196,8 +207,9 @@ json.apply = function (snapshot, op) {
 
       // Number add
     } else if (c.na !== void 0) {
-      if (typeof elem[key] != "number")
+      if (typeof elem[key] != "number") {
         throw new Error("Referenced element not a number");
+      }
 
       elem[key] += c.na;
     }
@@ -291,10 +303,9 @@ var pathMatches = (json.pathMatches = function (p1, p2, ignoreLast) {
 
 json.append = function (
   dest, // 新的op
-  c  // 来源op {}
+  c // 来源op {}
 ) {
-
-  console.log('c=', c)
+  console.log("c=", c);
   // 深度拷贝
   c = clone(c);
 
@@ -306,11 +317,8 @@ json.append = function (
   var last = dest[dest.length - 1];
 
   // convert old string ops to use subtype for backwards compatibility
-  // 为了向后兼容，将旧的字符串操作转换为使用子类型  
-  if (
-    (c.si != null || c.sd != null) &&
-    (last.si != null || last.sd != null)
-  ) {
+  // 为了向后兼容，将旧的字符串操作转换为使用子类型
+  if ((c.si != null || c.sd != null) && (last.si != null || last.sd != null)) {
     // 用于将旧字符串操作与子类型操作进行转换的辅助函数
     convertFromText(c);
     // 用于将旧字符串操作与子类型操作进行转换的辅助函数
@@ -400,7 +408,8 @@ json.compose = function (op1, op2) {
 
 // 序列化op
 json.normalize = function (op) {
-  console.log('normalize=', op)
+  console.log("normalize=", op);
+ 
   var newOp = [];
 
   op = isArray(op) ? op : [op];
@@ -424,15 +433,21 @@ json.commonLengthForOps = function (a, b) {
 
   if (b.na != null || b.t) blen++;
 
-  if (alen === 0) return -1;
-  if (blen === 0) return null;
+  if (alen === 0) {
+    return -1;
+  }
+  if (blen === 0) {
+    return null;
+  }
 
   alen--;
   blen--;
 
   for (var i = 0; i < alen; i++) {
     var p = a.p[i];
-    if (i >= blen || p !== b.p[i]) return null;
+    if (i >= blen || p !== b.p[i]) {
+      return null;
+    }
   }
 
   return alen;
@@ -452,9 +467,13 @@ json.transformComponent = function (dest, c, otherC, type) {
   var cplength = c.p.length;
   var otherCplength = otherC.p.length;
 
-  if (c.na != null || c.t) cplength++;
+  if (c.na != null || c.t) {
+    cplength++;
+  }
 
-  if (otherC.na != null || otherC.t) otherCplength++;
+  if (otherC.na != null || otherC.t) {
+    otherCplength++;
+  }
 
   // if c is deleting something, and that thing is changed by otherC, we need to
   // update c to reflect that change for invertibility.
@@ -561,7 +580,9 @@ json.transformComponent = function (dest, c, otherC, type) {
           var p = otherC.p[common];
           var from = c.p[common];
           var to = c.lm;
-          if (p < to || (p === to && from < to)) c.lm--;
+          if (p < to || (p === to && from < to)) {
+            c.lm--;
+          }
         }
       }
 
