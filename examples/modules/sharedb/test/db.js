@@ -1,4 +1,4 @@
-var async = require('async');
+var async = require('../../async');
 var expect = require('chai').expect;
 var Backend = require('../lib/backend');
 var ot = require('../lib/ot');

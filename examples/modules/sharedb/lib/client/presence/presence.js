@@ -2,8 +2,8 @@ var emitter = require("../../emitter");
 var LocalPresence = require("./local-presence");
 var RemotePresence = require("./remote-presence");
 var util = require("../../util");
-var async = require("async");
-var hat = require("hat");
+var async = require("../../../../async");
+var hat = require("../../../../hat");
 
 module.exports = Presence;
 function Presence(connection, channel) {

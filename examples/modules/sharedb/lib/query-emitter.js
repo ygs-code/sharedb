@@ -1,5 +1,5 @@
-var arraydiff = require('arraydiff');
-var deepEqual = require('fast-deep-equal');
+var arraydiff = require('../../arraydiff');
+var deepEqual = require('../../fast-deep-equal');
 var ShareDBError = require('./error');
 var util = require('./util');
 

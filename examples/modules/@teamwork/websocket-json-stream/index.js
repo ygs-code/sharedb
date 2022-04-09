@@ -24,6 +24,8 @@ module.exports = class WebSocketJSONStream extends Duplex {
     this.ws.addEventListener("message", ({ data }) => {
       let value;
 
+      console.log('data==========',data)
+
       try {
         value = JSON.parse(data);
       } catch (error) {

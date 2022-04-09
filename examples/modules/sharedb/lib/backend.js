@@ -18,7 +18,7 @@ var logger = require("./logger");
 
 var ERROR_CODE = ShareDBError.CODES;
 
-function Backend(options) {
+function Backend (options) {
   if (!(this instanceof Backend)) return new Backend(options);
   emitter.EventEmitter.call(this);
 
@@ -40,8 +40,8 @@ function Backend(options) {
   if (this.presenceEnabled && !this.doNotForwardSendPresenceErrorsToClient) {
     logger.warn(
       'Broadcasting "sendPresence" middleware errors to clients is deprecated ' +
-        "and will be removed in a future release. Disable this behaviour with:\n\n" +
-        "new Backend({doNotForwardSendPresenceErrorsToClient: true})\n\n"
+      "and will be removed in a future release. Disable this behaviour with:\n\n" +
+      "new Backend({doNotForwardSendPresenceErrorsToClient: true})\n\n"
     );
   }
 
@@ -56,9 +56,9 @@ function Backend(options) {
     typeof options.errorHandler === "function"
       ? options.errorHandler
       : // eslint-disable-next-line no-unused-vars
-        function (error, context) {
-          logger.error(error);
-        };
+      function (error, context) {
+        logger.error(error);
+      };
 }
 module.exports = Backend;
 emitter.mixin(Backend);
@@ -106,7 +106,7 @@ Backend.prototype.SNAPSHOT_TYPES = {
 Backend.prototype.close = function (callback) {
   var wait = 4;
   var backend = this;
-  function finish(err) {
+  function finish (err) {
     if (err) {
       if (callback) return callback(err);
       return backend.emit("error", err);
@@ -159,16 +159,22 @@ Backend.prototype.connect = function (connection, req, callback) {
  * through to any connect() middleware. This is useful for inspecting cookies
  * or an express session or whatever on the request object in your middleware.
  *
- * (The agent is available through all middleware)
+ * (The agent is available through all middleware) 代理可以通过所有中间件使用
  */
-Backend.prototype.listen = function (stream, req) {
+Backend.prototype.listen = function (
+  stream,  // webs
+  req  // node req
+) {
+  //
   var agent = new Agent(this, stream);
   this.trigger(
     this.MIDDLEWARE_ACTIONS.connect,
     agent,
     { stream: stream, req: req },
     function (err) {
-      if (err) return agent.close(err);
+      if (err) {
+        return agent.close(err);
+      }
       agent._open();
     }
   );
@@ -184,8 +190,8 @@ Backend.prototype.addProjection = function (name, collection, fields) {
     if (fields[key] !== true) {
       throw new Error(
         "Invalid field " +
-          key +
-          " - fields must be {somekey: true}. Subfields not currently supported."
+        key +
+        " - fields must be {somekey: true}. Subfields not currently supported."
       );
     }
   }
@@ -854,7 +860,7 @@ Backend.prototype.subscribeBulk = function (agent, index, versions, callback) {
     }
   );
 };
-function destroyStreams(streams) {
+function destroyStreams (streams) {
   for (var id in streams) {
     streams[id].destroy();
   }
@@ -1271,7 +1277,7 @@ Backend.prototype.transformPresenceToLatestVersion = function (
   );
 };
 
-function pluckIds(snapshots) {
+function pluckIds (snapshots) {
   var ids = [];
   for (var i = 0; i < snapshots.length; i++) {
     ids.push(snapshots[i].id);
@@ -1279,7 +1285,7 @@ function pluckIds(snapshots) {
   return ids;
 }
 
-function filterOpsInPlaceBeforeTimestamp(ops, timestamp) {
+function filterOpsInPlaceBeforeTimestamp (ops, timestamp) {
   for (var i = 0; i < ops.length; i++) {
     var op = ops[i];
     var opTimestamp = op.m && op.m.ts;

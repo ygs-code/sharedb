@@ -932,7 +932,7 @@ Doc.prototype._pushOp = function (
     // end of the last pending operation.
     //如果该类型支持组合操作，则尝试将操作组合到
     //最后一个挂起的操作结束。
-    var composed = this._tryCompose(op);
+    var composed = this._tryCompose(op); 
 
     if (composed) {
       composed.callbacks.push(callback);

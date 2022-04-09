@@ -1,4 +1,4 @@
-var json0 = require('ot-json0').type;
+var json0 = require('../../ot-json0').type;
 var ShareDBError = require('./error');
 
 var ERROR_CODE = ShareDBError.CODES;

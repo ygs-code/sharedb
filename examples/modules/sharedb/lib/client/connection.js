@@ -13,7 +13,7 @@ var logger = require("../logger");
 var ERROR_CODE = ShareDBError.CODES;
 
 // 如果状态等于 0 或者 1 那么 就是在连接中
-function connectionState(socket) {
+function connectionState (socket) {
   if (socket.readyState === 0 || socket.readyState === 1) return "connecting";
   return "disconnected";
 }
@@ -39,7 +39,7 @@ function connectionState(socket) {
  */
 module.exports = Connection;
 // 构造函数
-function Connection(
+function Connection (
   socket //socket对象
 ) {
   // 引入 events 模块 发布订阅事件
@@ -288,7 +288,7 @@ Connection.prototype.handleMessage = function (message) {
   }
 };
 
-function wrapErrorData(errorData, fullMessage) {
+function wrapErrorData (errorData, fullMessage) {
   // wrap in Error object so can be passed through event emitters
   var err = new Error(errorData.message);
   err.code = errorData.code;
@@ -499,6 +499,7 @@ Connection.prototype.sendOp = function (doc, op) {
   // Ensure the doc is registered so that it receives the reply message
   // 把文档注入到this.collections对象中
   this._addDoc(doc);
+
   var message = {
     a: "op",
     c: doc.collection,
@@ -508,12 +509,21 @@ Connection.prototype.sendOp = function (doc, op) {
     seq: op.seq,
     x: {},
   };
-  if ("op" in op) message.op = op.op;
-  if (op.create) message.create = op.create;
-  if (op.del) message.del = op.del;
-  if (doc.submitSource) message.x.source = op.source;
-  console.log('message=',message)
+  if ("op" in op) {
+    message.op = op.op;
+  }
+  if (op.create) {
+    message.create = op.create;
+  }
+  if (op.del) {
+    message.del = op.del;
+  }
+  if (doc.submitSource) {
+    message.x.source = op.source;
+  }
+  console.log('message=', message)
   debugger
+  // 发消息给服务器 
   this.send(message);
 };
 
@@ -648,14 +658,14 @@ Connection.prototype.hasPending = function () {
     this._firstSnapshotRequest()
   );
 };
-function hasPending(object) {
+function hasPending (object) {
   return object.hasPending();
 }
 
 Connection.prototype.hasWritePending = function () {
   return !!this._firstDoc(hasWritePending);
 };
-function hasWritePending(object) {
+function hasWritePending (object) {
   return object.hasWritePending();
 }
 

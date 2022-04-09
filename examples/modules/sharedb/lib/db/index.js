@@ -1,4 +1,4 @@
-var async = require('async');
+var async = require('../../../async');
 var ShareDBError = require('../error');
 
 var ERROR_CODE = ShareDBError.CODES;

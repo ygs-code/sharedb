@@ -3,7 +3,7 @@ var Backend = require('../lib/backend');
 var MilestoneDB = require('../lib/milestone-db');
 var NoOpMilestoneDB = require('../lib/milestone-db/no-op');
 var Snapshot = require('../lib/snapshot');
-var async = require('async');
+var async = require('../../async');
 var errorHandler = require('./util').errorHandler;
 
 describe('Base class', function() {

@@ -1,4 +1,4 @@
-var hat = require('hat');
+var hat = require('../../hat');
 var types = require('./types');
 var util = require('./util');
 var logger = require('./logger');
@@ -11,11 +11,19 @@ var ERROR_CODE = ShareDBError.CODES;
  * calls the corresponding functions on its Agent. It uses the return values
  * to send responses back. Agent also handles piping the operation streams
  * provided by a Agent.
+*代理反序列化从流和接收的有线协议消息  
+调用Agent上相应的函数。 它使用返回值  
+返回响应。 代理还处理操作流的管道  
+*由代理提供。  
+ 
  *
  * @param {Backend} backend
  * @param {Duplex} stream connection to a client
  */
-function Agent(backend, stream) {
+function Agent (
+  backend,  // backend 实例
+  stream  // webscoket 操作流
+) {
   this.backend = backend;
   this.stream = stream;
 
@@ -25,45 +33,68 @@ function Agent(backend, stream) {
   // Only legacy clients, or new clients connecting for the first time will use the
   // Agent-provided clientId. Ideally we'll deprecate clientId in favour of src
   // in the next breaking change.
+  // SRC是一个客户端可配置的id，客户端将在握手时设置，  
+  //和附加到它的操作。 如果设置了，这应该优先于clientId。  
+  //只有旧的客户端，或新客户端第一次连接将使用  
+  // Agent-provided clientId。 理想情况下，我们会弃用clientId而用src  
+  //在下一个打破改变。  
   this.src = null;
   this.connectTime = Date.now();
 
   // We need to track which documents are subscribed by the client. This is a
   // map of collection -> id -> stream
+  //我们需要跟踪哪些文件被客户端订阅。 这是一个  
+  // map的集合-> id ->流  
   this.subscribedDocs = {};
 
   // Map from queryId -> emitter
+  //映射从查询id ->发射器
   this.subscribedQueries = {};
 
   // Track which documents are subscribed to presence by the client. This is a
   // map of channel -> stream
+  //跟踪哪些文档被客户端订阅。 这是一个  
+  // >通道的映射  
   this.subscribedPresences = {};
   // Highest seq received for a subscription request. Any seq lower than this
   // value is stale, and should be ignored. Used for keeping the subscription
   // state in sync with the client's desired state. Map of channel -> seq
+  //订阅请求收到的最高seq。 低于这个的任何seq  
+  // value是陈旧的，应该被忽略。 用于保存订阅  
+  //状态与客户端期望的状态同步。 channel -> seq的映射  
   this.presenceSubscriptionSeq = {};
   // Keep track of the last request that has been sent by each local presence
   // belonging to this agent. This is used to generate a new disconnection
   // request if the client disconnects ungracefully. This is a
   // map of channel -> id -> request
+  //记录每个本地存在发送的最后一个请求  
+  //属于这个代理。 这用于生成新的断开连接  
+  //请求客户端断开连接。 这是一个  
+  // channel -> id ->请求  
   this.presenceRequests = {};
 
   // We need to track this manually to make sure we don't reply to messages
   // after the stream was closed.
+  //我们需要手动跟踪这个，以确保我们不回复消息  
+  //流关闭后。  
   this.closed = false;
 
   // For custom use in middleware. The agent is a convenient place to cache
   // session state in memory. It is in memory only as long as the session is
   // active, and it is passed to each middleware call
+  //在中间件中自定义使用。 代理是一个方便缓存的地方  
+  //会话状态 它只在会话存在时才在内存中  
+  //活动的，它被传递到每个中间件调用  
   this.custom = {};
 
   // Send the legacy message to initialize old clients with the random agent Id
+  //发送旧消息初始化旧客户端随机代理Id  
   this.send(this._initMessage('init'));
 }
 module.exports = Agent;
 
 // Close the agent with the client.
-Agent.prototype.close = function(err) {
+Agent.prototype.close = function (err) {
   if (err) {
     logger.warn('Agent closed due to error', this._src(), err.stack || err);
   }
@@ -72,7 +103,7 @@ Agent.prototype.close = function(err) {
   this.stream.end();
 };
 
-Agent.prototype._cleanup = function() {
+Agent.prototype._cleanup = function () {
   // Only clean up once if the stream emits both 'end' and 'close'.
   if (this.closed) return;
 
@@ -108,7 +139,7 @@ Agent.prototype._cleanup = function() {
  * Passes operation data received on stream to the agent stream via
  * _sendOp()
  */
-Agent.prototype._subscribeToStream = function(collection, id, stream) {
+Agent.prototype._subscribeToStream = function (collection, id, stream) {
   if (this.closed) return stream.destroy();
 
   var streams = this.subscribedDocs[collection] || (this.subscribedDocs[collection] = {});
@@ -119,7 +150,7 @@ Agent.prototype._subscribeToStream = function(collection, id, stream) {
   streams[id] = stream;
 
   var agent = this;
-  stream.on('data', function(data) {
+  stream.on('data', function (data) {
     if (data.error) {
       // Log then silently ignore errors in a subscription stream, since these
       // may not be the client's fault, and they were not the result of a
@@ -129,7 +160,7 @@ Agent.prototype._subscribeToStream = function(collection, id, stream) {
     }
     agent._onOp(collection, id, data);
   });
-  stream.on('end', function() {
+  stream.on('end', function () {
     // The op stream is done sending, so release its reference
     var streams = agent.subscribedDocs[collection];
     if (!streams || streams[id] !== stream) return;
@@ -139,24 +170,24 @@ Agent.prototype._subscribeToStream = function(collection, id, stream) {
   });
 };
 
-Agent.prototype._subscribeToPresenceStream = function(channel, stream) {
+Agent.prototype._subscribeToPresenceStream = function (channel, stream) {
   if (this.closed) return stream.destroy();
   var agent = this;
 
-  stream.on('data', function(data) {
+  stream.on('data', function (data) {
     if (data.error) {
       logger.error('Presence subscription stream error', channel, data.error);
     }
     agent._handlePresenceData(data);
   });
 
-  stream.on('end', function() {
+  stream.on('end', function () {
     var requests = agent.presenceRequests[channel] || {};
     for (var id in requests) {
       var request = agent.presenceRequests[channel][id];
       request.seq++;
       request.p = null;
-      agent._broadcastPresence(request, function(error) {
+      agent._broadcastPresence(request, function (error) {
         if (error) logger.error('Error broadcasting disconnect presence', channel, error);
       });
     }
@@ -167,17 +198,17 @@ Agent.prototype._subscribeToPresenceStream = function(channel, stream) {
   });
 };
 
-Agent.prototype._subscribeToQuery = function(emitter, queryId, collection, query) {
+Agent.prototype._subscribeToQuery = function (emitter, queryId, collection, query) {
   var previous = this.subscribedQueries[queryId];
   if (previous) previous.destroy();
   this.subscribedQueries[queryId] = emitter;
 
   var agent = this;
-  emitter.onExtra = function(extra) {
-    agent.send({a: 'q', id: queryId, extra: extra});
+  emitter.onExtra = function (extra) {
+    agent.send({ a: 'q', id: queryId, extra: extra });
   };
 
-  emitter.onDiff = function(diff) {
+  emitter.onDiff = function (diff) {
     for (var i = 0; i < diff.length; i++) {
       var item = diff[i];
       if (item.type === 'insert') {
@@ -186,17 +217,17 @@ Agent.prototype._subscribeToQuery = function(emitter, queryId, collection, query
     }
     // Consider stripping the collection out of the data we send here
     // if it matches the query's collection.
-    agent.send({a: 'q', id: queryId, diff: diff});
+    agent.send({ a: 'q', id: queryId, diff: diff });
   };
 
-  emitter.onError = function(err) {
+  emitter.onError = function (err) {
     // Log then silently ignore errors in a subscription stream, since these
     // may not be the client's fault, and they were not the result of a
     // direct request by the client
     logger.error('Query subscription stream error', collection, query, err);
   };
 
-  emitter.onOp = function(op) {
+  emitter.onOp = function (op) {
     var id = op.d;
     agent._onOp(collection, id, op);
   };
@@ -204,7 +235,7 @@ Agent.prototype._subscribeToQuery = function(emitter, queryId, collection, query
   emitter._open();
 };
 
-Agent.prototype._onOp = function(collection, id, op) {
+Agent.prototype._onOp = function (collection, id, op) {
   if (this._isOwnOp(collection, op)) return;
 
   // Ops emitted here are coming directly from pubsub, which emits the same op
@@ -221,9 +252,9 @@ Agent.prototype._onOp = function(collection, id, op) {
   // precaution against op middleware breaking query subscriptions, we delay
   // before calling into projection and middleware code
   var agent = this;
-  util.nextTick(function() {
+  util.nextTick(function () {
     var copy = shallowCopy(op);
-    agent.backend.sanitizeOp(agent, collection, id, copy, function(err) {
+    agent.backend.sanitizeOp(agent, collection, id, copy, function (err) {
       if (err) {
         logger.error('Error sanitizing op emitted from subscription', collection, id, copy, err);
         return;
@@ -233,14 +264,14 @@ Agent.prototype._onOp = function(collection, id, op) {
   });
 };
 
-Agent.prototype._isOwnOp = function(collection, op) {
+Agent.prototype._isOwnOp = function (collection, op) {
   // Detect ops from this client on the same projection. Since the client sent
   // these in, the submit reply will be sufficient and we can silently ignore
   // them in the streams for subscribed documents or queries
   return (this._src() === op.src) && (collection === (op.i || op.c));
 };
 
-Agent.prototype.send = function(message) {
+Agent.prototype.send = function (message) {
   // Quietly drop replies if the stream was closed
   if (this.closed) return;
 
@@ -248,7 +279,7 @@ Agent.prototype.send = function(message) {
   this.stream.write(message);
 };
 
-Agent.prototype._sendOp = function(collection, id, op) {
+Agent.prototype._sendOp = function (collection, id, op) {
   var message = {
     a: 'op',
     c: collection,
@@ -257,25 +288,32 @@ Agent.prototype._sendOp = function(collection, id, op) {
     src: op.src,
     seq: op.seq
   };
-  if ('op' in op) message.op = op.op;
-  if (op.create) message.create = op.create;
-  if (op.del) message.del = true;
-
+  if ('op' in op) {
+    message.op = op.op;
+  }
+  if (op.create) {
+    message.create = op.create;
+  }
+  if (op.del) {
+    message.del = true;
+  }
+  console.log('_sendOp message=',message)
+  // 给客户端发信息 
   this.send(message);
 };
-Agent.prototype._sendOps = function(collection, id, ops) {
+Agent.prototype._sendOps = function (collection, id, ops) {
   for (var i = 0; i < ops.length; i++) {
     this._sendOp(collection, id, ops[i]);
   }
 };
-Agent.prototype._sendOpsBulk = function(collection, opsMap) {
+Agent.prototype._sendOpsBulk = function (collection, opsMap) {
   for (var id in opsMap) {
     var ops = opsMap[id];
     this._sendOps(collection, id, ops);
   }
 };
 
-function getReplyErrorObject(err) {
+function getReplyErrorObject (err) {
   if (typeof err === 'string') {
     return {
       code: ERROR_CODE.ERR_UNKNOWN_ERROR,
@@ -292,7 +330,7 @@ function getReplyErrorObject(err) {
   }
 }
 
-Agent.prototype._reply = function(request, err, message) {
+Agent.prototype._reply = function (request, err, message) {
   var agent = this;
   var backend = agent.backend;
   if (err) {
@@ -311,8 +349,8 @@ Agent.prototype._reply = function(request, err, message) {
     if (request.b && !message.data) message.b = request.b;
   }
 
-  var middlewareContext = {request: request, reply: message};
-  backend.trigger(backend.MIDDLEWARE_ACTIONS.reply, agent, middlewareContext, function(err) {
+  var middlewareContext = { request: request, reply: message };
+  backend.trigger(backend.MIDDLEWARE_ACTIONS.reply, agent, middlewareContext, function (err) {
     if (err) {
       request.error = getReplyErrorObject(err);
       agent.send(request);
@@ -323,13 +361,13 @@ Agent.prototype._reply = function(request, err, message) {
 };
 
 // Start processing events from the stream
-Agent.prototype._open = function() {
+Agent.prototype._open = function () {
   if (this.closed) return;
   this.backend.agentsCount++;
   if (!this.stream.isServer) this.backend.remoteAgentsCount++;
 
   var agent = this;
-  this.stream.on('data', function(chunk) {
+  this.stream.on('data', function (chunk) {
     if (agent.closed) return;
 
     if (typeof chunk !== 'object') {
@@ -337,9 +375,9 @@ Agent.prototype._open = function() {
       return agent.close(err);
     }
 
-    var request = {data: chunk};
-    agent.backend.trigger(agent.backend.MIDDLEWARE_ACTIONS.receive, agent, request, function(err) {
-      var callback = function(err, message) {
+    var request = { data: chunk };
+    agent.backend.trigger(agent.backend.MIDDLEWARE_ACTIONS.receive, agent, request, function (err) {
+      var callback = function (err, message) {
         agent._reply(request.data, err, message);
       };
       if (err) return callback(err);
@@ -353,7 +391,7 @@ Agent.prototype._open = function() {
 };
 
 // Check a request to see if its valid. Returns an error if there's a problem.
-Agent.prototype._checkRequest = function(request) {
+Agent.prototype._checkRequest = function (request) {
   if (request.a === 'qf' || request.a === 'qs' || request.a === 'qu') {
     // Query messages need an ID property.
     if (typeof request.id !== 'number') return 'Missing query ID';
@@ -377,7 +415,7 @@ Agent.prototype._checkRequest = function(request) {
 };
 
 // Handle an incoming message from the client
-Agent.prototype._handleMessage = function(request, callback) {
+Agent.prototype._handleMessage = function (request, callback) {
   try {
     var errMessage = this._checkRequest(request);
     if (errMessage) return callback(new ShareDBError(ERROR_CODE.ERR_MESSAGE_BADLY_FORMED, errMessage));
@@ -441,7 +479,7 @@ Agent.prototype._handleMessage = function(request, callback) {
     callback(err);
   }
 };
-function getQueryOptions(request) {
+function getQueryOptions (request) {
   var results = request.r;
   var ids;
   var fetch;
@@ -472,9 +510,9 @@ function getQueryOptions(request) {
   return options;
 }
 
-Agent.prototype._queryFetch = function(queryId, collection, query, options, callback) {
+Agent.prototype._queryFetch = function (queryId, collection, query, options, callback) {
   // Fetch the results of a query once
-  this.backend.queryFetch(this, collection, query, options, function(err, results, extra) {
+  this.backend.queryFetch(this, collection, query, options, function (err, results, extra) {
     if (err) return callback(err);
     var message = {
       data: getResultsData(results),
@@ -484,20 +522,20 @@ Agent.prototype._queryFetch = function(queryId, collection, query, options, call
   });
 };
 
-Agent.prototype._querySubscribe = function(queryId, collection, query, options, callback) {
+Agent.prototype._querySubscribe = function (queryId, collection, query, options, callback) {
   // Subscribe to a query. The client is sent the query results and its
   // notified whenever there's a change
   var agent = this;
   var wait = 1;
   var message;
-  function finish(err) {
+  function finish (err) {
     if (err) return callback(err);
     if (--wait) return;
     callback(null, message);
   }
   if (options.fetch) {
     wait++;
-    this.backend.fetchBulk(this, collection, options.fetch, function(err, snapshotMap) {
+    this.backend.fetchBulk(this, collection, options.fetch, function (err, snapshotMap) {
       if (err) return finish(err);
       message = getMapResult(snapshotMap);
       finish();
@@ -507,7 +545,7 @@ Agent.prototype._querySubscribe = function(queryId, collection, query, options, 
     wait++;
     this._fetchBulkOps(collection, options.fetchOps, finish);
   }
-  this.backend.querySubscribe(this, collection, query, options, function(err, emitter, results, extra) {
+  this.backend.querySubscribe(this, collection, query, options, function (err, emitter, results, extra) {
     if (err) return finish(err);
     if (this.closed) return emitter.destroy();
 
@@ -527,7 +565,7 @@ Agent.prototype._querySubscribe = function(queryId, collection, query, options, 
   });
 };
 
-function getResultsData(results) {
+function getResultsData (results) {
   var items = [];
   for (var i = 0; i < results.length; i++) {
     var result = results[i];
@@ -538,7 +576,7 @@ function getResultsData(results) {
   return items;
 }
 
-function getMapResult(snapshotMap) {
+function getMapResult (snapshotMap) {
   var data = {};
   for (var id in snapshotMap) {
     var mapValue = snapshotMap[id];
@@ -546,15 +584,15 @@ function getMapResult(snapshotMap) {
     // `{error: Error | string}` as a value.
     if (mapValue.error) {
       // Transform errors to serialization-friendly objects.
-      data[id] = {error: getReplyErrorObject(mapValue.error)};
+      data[id] = { error: getReplyErrorObject(mapValue.error) };
     } else {
       data[id] = getSnapshotData(mapValue);
     }
   }
-  return {data: data};
+  return { data: data };
 }
 
-function getSnapshotData(snapshot) {
+function getSnapshotData (snapshot) {
   var data = {
     v: snapshot.v,
     data: snapshot.data
@@ -565,7 +603,7 @@ function getSnapshotData(snapshot) {
   return data;
 }
 
-Agent.prototype._queryUnsubscribe = function(queryId, callback) {
+Agent.prototype._queryUnsubscribe = function (queryId, callback) {
   var emitter = this.subscribedQueries[queryId];
   if (emitter) {
     emitter.destroy();
@@ -574,12 +612,12 @@ Agent.prototype._queryUnsubscribe = function(queryId, callback) {
   util.nextTick(callback);
 };
 
-Agent.prototype._fetch = function(collection, id, version, callback) {
+Agent.prototype._fetch = function (collection, id, version, callback) {
   if (version == null) {
     // Fetch a snapshot
-    this.backend.fetch(this, collection, id, function(err, snapshot) {
+    this.backend.fetch(this, collection, id, function (err, snapshot) {
       if (err) return callback(err);
-      callback(null, {data: getSnapshotData(snapshot)});
+      callback(null, { data: getSnapshotData(snapshot) });
     });
   } else {
     // It says fetch on the tin, but if a version is specified the client
@@ -588,18 +626,18 @@ Agent.prototype._fetch = function(collection, id, version, callback) {
   }
 };
 
-Agent.prototype._fetchOps = function(collection, id, version, callback) {
+Agent.prototype._fetchOps = function (collection, id, version, callback) {
   var agent = this;
-  this.backend.getOps(this, collection, id, version, null, function(err, ops) {
+  this.backend.getOps(this, collection, id, version, null, function (err, ops) {
     if (err) return callback(err);
     agent._sendOps(collection, id, ops);
     callback();
   });
 };
 
-Agent.prototype._fetchBulk = function(collection, versions, callback) {
+Agent.prototype._fetchBulk = function (collection, versions, callback) {
   if (Array.isArray(versions)) {
-    this.backend.fetchBulk(this, collection, versions, function(err, snapshotMap) {
+    this.backend.fetchBulk(this, collection, versions, function (err, snapshotMap) {
       if (err) {
         return callback(err);
       }
@@ -615,20 +653,20 @@ Agent.prototype._fetchBulk = function(collection, versions, callback) {
   }
 };
 
-Agent.prototype._fetchBulkOps = function(collection, versions, callback) {
+Agent.prototype._fetchBulkOps = function (collection, versions, callback) {
   var agent = this;
-  this.backend.getOpsBulk(this, collection, versions, null, function(err, opsMap) {
+  this.backend.getOpsBulk(this, collection, versions, null, function (err, opsMap) {
     if (err) return callback(err);
     agent._sendOpsBulk(collection, opsMap);
     callback();
   });
 };
 
-Agent.prototype._subscribe = function(collection, id, version, callback) {
+Agent.prototype._subscribe = function (collection, id, version, callback) {
   // If the version is specified, catch the client up by sending all ops
   // since the specified version
   var agent = this;
-  this.backend.subscribe(this, collection, id, version, function(err, stream, snapshot, ops) {
+  this.backend.subscribe(this, collection, id, version, function (err, stream, snapshot, ops) {
     if (err) return callback(err);
     // If we're subscribing from a known version, send any ops committed since
     // the requested version to bring the client's doc up to date
@@ -644,17 +682,17 @@ Agent.prototype._subscribe = function(collection, id, version, callback) {
     // Snapshot is returned only when subscribing from a null version.
     // Otherwise, ops will have been pushed into the stream
     if (snapshot) {
-      callback(null, {data: getSnapshotData(snapshot)});
+      callback(null, { data: getSnapshotData(snapshot) });
     } else {
       callback();
     }
   });
 };
 
-Agent.prototype._subscribeBulk = function(collection, versions, callback) {
+Agent.prototype._subscribeBulk = function (collection, versions, callback) {
   // See _subscribe() above. This function's logic should match but in bulk
   var agent = this;
-  this.backend.subscribeBulk(this, collection, versions, function(err, streams, snapshotMap, opsMap) {
+  this.backend.subscribeBulk(this, collection, versions, function (err, streams, snapshotMap, opsMap) {
     if (err) {
       return callback(err);
     }
@@ -673,7 +711,7 @@ Agent.prototype._subscribeBulk = function(collection, versions, callback) {
   });
 };
 
-Agent.prototype._unsubscribe = function(collection, id, callback) {
+Agent.prototype._unsubscribe = function (collection, id, callback) {
   // Unsubscribe from the specified document. This cancels the active
   // stream or an inflight subscribing state
   var docs = this.subscribedDocs[collection];
@@ -682,7 +720,7 @@ Agent.prototype._unsubscribe = function(collection, id, callback) {
   util.nextTick(callback);
 };
 
-Agent.prototype._unsubscribeBulk = function(collection, ids, callback) {
+Agent.prototype._unsubscribeBulk = function (collection, ids, callback) {
   var docs = this.subscribedDocs[collection];
   if (!docs) return util.nextTick(callback);
   for (var i = 0; i < ids.length; i++) {
@@ -693,11 +731,11 @@ Agent.prototype._unsubscribeBulk = function(collection, ids, callback) {
   util.nextTick(callback);
 };
 
-Agent.prototype._submit = function(collection, id, op, callback) {
+Agent.prototype._submit = function (collection, id, op, callback) {
   var agent = this;
-  this.backend.submit(this, collection, id, op, null, function(err, ops) {
+  this.backend.submit(this, collection, id, op, null, function (err, ops) {
     // Message to acknowledge the op was successfully submitted
-    var ack = {src: op.src, seq: op.seq, v: op.v};
+    var ack = { src: op.src, seq: op.seq, v: op.v };
     if (err) {
       // Occasional 'Op already submitted' errors are expected to happen as
       // part of normal operation, since inflight ops need to be resent after
@@ -712,15 +750,15 @@ Agent.prototype._submit = function(collection, id, op, callback) {
   });
 };
 
-Agent.prototype._fetchSnapshot = function(collection, id, version, callback) {
+Agent.prototype._fetchSnapshot = function (collection, id, version, callback) {
   this.backend.fetchSnapshot(this, collection, id, version, callback);
 };
 
-Agent.prototype._fetchSnapshotByTimestamp = function(collection, id, timestamp, callback) {
+Agent.prototype._fetchSnapshotByTimestamp = function (collection, id, timestamp, callback) {
   this.backend.fetchSnapshotByTimestamp(this, collection, id, timestamp, callback);
 };
 
-Agent.prototype._initMessage = function(action) {
+Agent.prototype._initMessage = function (action) {
   return {
     a: action,
     protocol: 1,
@@ -730,11 +768,11 @@ Agent.prototype._initMessage = function(action) {
   };
 };
 
-Agent.prototype._src = function() {
+Agent.prototype._src = function () {
   return this.src || this.clientId;
 };
 
-Agent.prototype._broadcastPresence = function(presence, callback) {
+Agent.prototype._broadcastPresence = function (presence, callback) {
   var agent = this;
   var backend = this.backend;
   var requests = this.presenceRequests[presence.ch] || (this.presenceRequests[presence.ch] = {});
@@ -746,12 +784,12 @@ Agent.prototype._broadcastPresence = function(presence, callback) {
     presence: presence,
     collection: presence.c
   };
-  backend.trigger(backend.MIDDLEWARE_ACTIONS.receivePresence, this, context, function(error) {
+  backend.trigger(backend.MIDDLEWARE_ACTIONS.receivePresence, this, context, function (error) {
     if (error) return callback(error);
-    backend.transformPresenceToLatestVersion(agent, presence, function(error, presence) {
+    backend.transformPresenceToLatestVersion(agent, presence, function (error, presence) {
       if (error) return callback(error);
       var channel = agent._getPresenceChannel(presence.ch);
-      agent.backend.pubsub.publish([channel], presence, function(error) {
+      agent.backend.pubsub.publish([channel], presence, function (error) {
         if (error) return callback(error);
         callback(null, presence);
       });
@@ -759,7 +797,7 @@ Agent.prototype._broadcastPresence = function(presence, callback) {
   });
 };
 
-Agent.prototype._createPresence = function(request) {
+Agent.prototype._createPresence = function (request) {
   return {
     a: 'p',
     ch: request.ch,
@@ -775,45 +813,45 @@ Agent.prototype._createPresence = function(request) {
   };
 };
 
-Agent.prototype._subscribePresence = function(channel, seq, callback) {
+Agent.prototype._subscribePresence = function (channel, seq, callback) {
   var agent = this;
   var presenceChannel = this._getPresenceChannel(channel);
-  this.backend.pubsub.subscribe(presenceChannel, function(error, stream) {
+  this.backend.pubsub.subscribe(presenceChannel, function (error, stream) {
     if (error) return callback(error);
     if (seq < agent.presenceSubscriptionSeq[channel]) {
       stream.destroy();
-      return callback(null, {ch: channel, seq: seq});
+      return callback(null, { ch: channel, seq: seq });
     }
     agent.presenceSubscriptionSeq[channel] = seq;
     agent.subscribedPresences[channel] = stream;
     agent._subscribeToPresenceStream(channel, stream);
-    agent._requestPresence(channel, function(error) {
-      callback(error, {ch: channel, seq: seq});
+    agent._requestPresence(channel, function (error) {
+      callback(error, { ch: channel, seq: seq });
     });
   });
 };
 
-Agent.prototype._unsubscribePresence = function(channel, seq, callback) {
+Agent.prototype._unsubscribePresence = function (channel, seq, callback) {
   if (seq < this.presenceSubscriptionSeq[channel]) return;
   this.presenceSubscriptionSeq[channel] = seq;
   var stream = this.subscribedPresences[channel];
   if (stream) stream.destroy();
-  callback(null, {ch: channel, seq: seq});
+  callback(null, { ch: channel, seq: seq });
 };
 
-Agent.prototype._getPresenceChannel = function(channel) {
+Agent.prototype._getPresenceChannel = function (channel) {
   return '$presence.' + channel;
 };
 
-Agent.prototype._requestPresence = function(channel, callback) {
+Agent.prototype._requestPresence = function (channel, callback) {
   var presenceChannel = this._getPresenceChannel(channel);
-  this.backend.pubsub.publish([presenceChannel], {ch: channel, r: true, src: this.clientId}, callback);
+  this.backend.pubsub.publish([presenceChannel], { ch: channel, r: true, src: this.clientId }, callback);
 };
 
-Agent.prototype._handlePresenceData = function(presence) {
+Agent.prototype._handlePresenceData = function (presence) {
   if (presence.src === this._src()) return;
 
-  if (presence.r) return this.send({a: 'pr', ch: presence.ch});
+  if (presence.r) return this.send({ a: 'pr', ch: presence.ch });
 
   var backend = this.backend;
   var context = {
@@ -821,17 +859,17 @@ Agent.prototype._handlePresenceData = function(presence) {
     presence: presence
   };
   var agent = this;
-  backend.trigger(backend.MIDDLEWARE_ACTIONS.sendPresence, this, context, function(error) {
+  backend.trigger(backend.MIDDLEWARE_ACTIONS.sendPresence, this, context, function (error) {
     if (error) {
-      if (backend.doNotForwardSendPresenceErrorsToClient) backend.errorHandler(error, {agent: agent});
-      else agent.send({a: 'p', ch: presence.ch, id: presence.id, error: getReplyErrorObject(error)});
+      if (backend.doNotForwardSendPresenceErrorsToClient) backend.errorHandler(error, { agent: agent });
+      else agent.send({ a: 'p', ch: presence.ch, id: presence.id, error: getReplyErrorObject(error) });
       return;
     }
     agent.send(presence);
   });
 };
 
-function createClientOp(request, clientId) {
+function createClientOp (request, clientId) {
   // src can be provided if it is not the same as the current agent,
   // such as a resubmission after a reconnect, but it usually isn't needed
   var src = request.src || clientId;
@@ -842,7 +880,7 @@ function createClientOp(request, clientId) {
         undefined;
 }
 
-function shallowCopy(object) {
+function shallowCopy (object) {
   var out = {};
   for (var key in object) {
     out[key] = object[key];
@@ -850,7 +888,7 @@ function shallowCopy(object) {
   return out;
 }
 
-function CreateOp(src, seq, v, create, x, c, d, m) {
+function CreateOp (src, seq, v, create, x, c, d, m) {
   this.src = src;
   this.seq = seq;
   this.v = v;
@@ -860,7 +898,7 @@ function CreateOp(src, seq, v, create, x, c, d, m) {
   this.m = m;
   this.x = x;
 }
-function EditOp(src, seq, v, op, x, c, d, m) {
+function EditOp (src, seq, v, op, x, c, d, m) {
   this.src = src;
   this.seq = seq;
   this.v = v;
@@ -870,7 +908,7 @@ function EditOp(src, seq, v, op, x, c, d, m) {
   this.m = m;
   this.x = x;
 }
-function DeleteOp(src, seq, v, del, x, c, d, m) {
+function DeleteOp (src, seq, v, del, x, c, d, m) {
   this.src = src;
   this.seq = seq;
   this.v = v;
