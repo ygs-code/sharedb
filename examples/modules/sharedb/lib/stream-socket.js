@@ -60,7 +60,17 @@ inherits(ServerStream, Duplex);
 
 ServerStream.prototype.isServer = true;
 
-ServerStream.prototype._read = util.doNothing;
+ServerStream.prototype._read = (...ags)=>{
+  console.log('data========',ags)
+
+} // util.doNothing;
+
+
+// ServerStream.prototype.read = (data)=>{
+//   console.log('data========',data)
+
+// } // util.doNothing;
+
 
 ServerStream.prototype._write = function(chunk, encoding, callback) {
   var socket = this.socket;
@@ -70,3 +80,9 @@ ServerStream.prototype._write = function(chunk, encoding, callback) {
     callback();
   });
 };
+
+
+
+ServerStream.prototype._send= function(json, callback) {
+    console.log('json=',json)
+}

@@ -26,11 +26,13 @@ MemoryPubSub.prototype._unsubscribe = function(channel, callback) {
 };
 
 MemoryPubSub.prototype._publish = function(channels, data, callback) {
+  console.log('channels==========',channels)
   var pubsub = this;
   util.nextTick(function() {
     for (var i = 0; i < channels.length; i++) {
       var channel = channels[i];
       if (pubsub.subscribed[channel]) {
+         //发布数据给 stream.on('data',()=>{}) 订阅数据监听
         pubsub._emit(channel, data);
       }
     }

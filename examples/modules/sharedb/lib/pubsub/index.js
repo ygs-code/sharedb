@@ -4,7 +4,7 @@ var ShareDBError = require('../error');
 var util = require('../util');
 
 var ERROR_CODE = ShareDBError.CODES;
-
+ 
 function PubSub(options) {
   if (!(this instanceof PubSub)) return new PubSub(options);
   emitter.EventEmitter.call(this);
@@ -67,7 +67,7 @@ PubSub.prototype.subscribe = function(channel, callback) {
   if (this.prefix) {
     channel = this.prefix + ' ' + channel;
   }
-
+  console.log('channel1=====================',channel)
   var pubsub = this;
   if (this.subscribed[channel]) {
     util.nextTick(function() {
@@ -84,6 +84,7 @@ PubSub.prototype.subscribe = function(channel, callback) {
   });
 };
 
+ //发布数据给 stream.on('data',()=>{}) 订阅数据监听
 PubSub.prototype.publish = function(channels, data, callback) {
   if (!callback) callback = this._defaultCallback;
   if (this.prefix) {
@@ -91,25 +92,34 @@ PubSub.prototype.publish = function(channels, data, callback) {
       channels[i] = this.prefix + ' ' + channels[i];
     }
   }
+  console.log('channels=',channels)
+
+   //发布数据给 stream.on('data',()=>{}) 订阅数据监听
   this._publish(channels, data, callback);
 };
 
+// 推送 socket 给所有人。
 PubSub.prototype._emit = function(channel, data) {
   var channelStreams = this.streams[channel];
+  console.log('channelStreams==========',channelStreams)
   if (channelStreams) {
     for (var id in channelStreams) {
+      //发布数据给 stream.on('data',()=>{}) 订阅数据监听
       channelStreams[id].pushData(data);
     }
   }
 };
 
+//
 PubSub.prototype._createStream = function(channel) {
   var stream = new OpStream();
   var pubsub = this;
   stream.once('close', function() {
+    // 回调删断开连接
     pubsub._removeStream(channel, stream);
   });
 
+  // 连接id
   this.streamsCount++;
   var map = this.streams[channel] || (this.streams[channel] = {});
   stream.id = this.nextStreamId++;

@@ -9,7 +9,12 @@ var WebSocketJSONStream = require("../modules/@teamwork/websocket-json-stream");
 // var WebSocketJSONStream = require("@teamwork/websocket-json-stream");
 
 var backend = new ShareDB();
-console.log("backend=", backend);
+// 订阅 send 事件
+backend.on('send',()=>{
+  console.log('backend.on(send)')
+})
+ 
+ 
 
 // Create initial document then fire callback
 function createDoc(callback) {
@@ -17,6 +22,7 @@ function createDoc(callback) {
   var connection = backend.connect();
   // 获取文档
   var doc = connection.get("examples", "textarea");
+  console.log('doc=========',doc)
   //
   doc.fetch(function (err) {
     if (err) throw err;
@@ -38,7 +44,12 @@ function startServer() {
   // Connect any incoming WebSocket connection to ShareDB
   var wss = new WebSocket.Server({ server: server });
   wss.on("connection", function (ws) {
+    console.log('connection==========')
     var stream = new WebSocketJSONStream(ws);
+    // stream.write({
+    //   name:'abc'
+    // })
+   console.log('backend.listen1') 
     backend.listen(stream);
   });
 

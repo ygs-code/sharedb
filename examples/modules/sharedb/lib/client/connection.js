@@ -145,6 +145,7 @@ Connection.prototype.bindToSocket = function (socket) {
   // 获取socket消息
   socket.onmessage = function (event) {
     console.log("event=", event);
+    debugger
     try {
       var data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
@@ -171,7 +172,9 @@ Connection.prototype.bindToSocket = function (socket) {
   };
 
   // If socket is already open, do handshake immediately. //如果socket已经打开，立即握手。
+  // 如果socket已经打开，则先发一个 hs 给服务器
   if (socket.readyState === 1) {
+    debugger
     connection._initializeHandshake();
   }
 
@@ -179,6 +182,7 @@ Connection.prototype.bindToSocket = function (socket) {
   socket.onopen = function () {
     // 设置状态
     connection._setState("connecting");
+    debugger
     connection._initializeHandshake();
   };
 
@@ -211,9 +215,10 @@ Connection.prototype.bindToSocket = function (socket) {
  * @param {object} message
  * @param {string} message.a action
  */
-// 获取消息
+// websocket 响应信息
 Connection.prototype.handleMessage = function (message) {
-  console.log("message=", message);
+  console.log("message1=", message);
+  debugger
   var err = null;
   if (message.error) {
     err = wrapErrorData(message.error, message);
@@ -226,8 +231,11 @@ Connection.prototype.handleMessage = function (message) {
   switch (message.a) {
     case "init":
       // Client initialization packet
+      // 初始化 获取到服务器init 信息的时候  会推送"hs" 给服务器
+      // 初始化告诉服务器 客户端已经连上   设置已经连上状态
       return this._handleLegacyInit(message);
     case "hs":
+      // 设置已经连上状态 告诉服务器 客户端socket已经连上
       return this._handleHandshake(err, message);
     case "qf":
       var query = this.queries[message.id];
@@ -481,8 +489,9 @@ Connection.prototype.sendFetch = function (doc) {
   return this._sendAction("f", doc, doc.version);
 };
 
-//发送订阅
+//发送订阅 告诉服务器文档信息
 Connection.prototype.sendSubscribe = function (doc) {
+  // 发送客户端文档信息给服务器
   return this._sendAction(
     "s",
     doc, // 文档对象
@@ -521,7 +530,7 @@ Connection.prototype.sendOp = function (doc, op) {
   if (doc.submitSource) {
     message.x.source = op.source;
   }
-  console.log('message=', message)
+  console.log('message2=', message)
   debugger
   // 发消息给服务器 
   this.send(message);
@@ -814,7 +823,7 @@ Connection.prototype._handleSnapshotFetch = function (error, message) {
   delete this._snapshotRequests[message.id];
   snapshotRequest._handleResponse(error, message);
 };
-
+// 初始化告诉服务器 客户端已经连上   设置已经连上状态
 Connection.prototype._handleLegacyInit = function (message) {
   // If the minor protocol version has been set, we want to use the
   // new handshake protocol. Let's send a handshake initialize, because
@@ -826,21 +835,26 @@ Connection.prototype._handleLegacyInit = function (message) {
   //忽略响应。
   if (message.protocolMinor) {
     // 初始化告诉服务器 客户端已经连上
+    debugger
     return this._initializeHandshake();
   }
+  // 设置已经连上状态
   this._initialize(message);
 };
-// 初始化告诉服务器 客户端已经连上
+// 初始化告诉服务器 客户端webscoket已经连上
 Connection.prototype._initializeHandshake = function () {
   // 发送 消息
   this.send({ a: "hs", id: this.id });
 };
 
+// 设置已经连上状态 告诉服务器 客户端socket已经连上
 Connection.prototype._handleHandshake = function (error, message) {
   if (error) return this.emit("error", error);
+  // 设置已经连上状态
   this._initialize(message);
 };
 
+// 设置已经连上状态
 Connection.prototype._initialize = function (message) {
   if (this.state !== "connecting") return;
 

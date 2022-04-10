@@ -59,6 +59,8 @@ MemoryDB.prototype.commit = function(collection, id, op, snapshot, options, call
 // Get the named document from the database. The callback is called with (err,
 // snapshot). A snapshot with a version of zero is returned if the docuemnt
 // has never been created in the database.
+//从数据库中获取指定文档。 回调函数用(err，snapshot)。 如果文档的版本为0，则返回一个快照  
+//没有在数据库中创建。  
 MemoryDB.prototype.getSnapshot = function(collection, id, fields, options, callback) {
   var includeMetadata = (fields && fields.$submit) || (options && options.metadata);
   var db = this;
@@ -151,6 +153,8 @@ MemoryDB.prototype._getSnapshotSync = function(collection, id, includeMetadata) 
   var collectionDocs = this.docs[collection];
   // We need to clone the snapshot, because ShareDB assumes each call to
   // getSnapshot returns a new object
+  //我们需要克隆快照，因为ShareDB假设每个调用  
+  // getSnapshot返回一个新对象  
   var doc = collectionDocs && collectionDocs[id];
   var snapshot;
   if (doc) {

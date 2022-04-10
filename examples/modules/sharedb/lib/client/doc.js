@@ -531,6 +531,7 @@ Doc.prototype._flushSubscribe = function () {
     console.log("this.wantSubscribe=", this.wantSubscribe);
     if (this.wantSubscribe) {
       // 发送动作  // 把文档注入到this.collections对象中
+      // 告诉服务器文档信息
       this.connection.sendSubscribe(this);
     } else {
       // Be conservative about our subscription state. We'll be unsubscribed
