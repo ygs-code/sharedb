@@ -44,6 +44,7 @@ DB.prototype.getOps = function(collection, id, from, to, options, callback) {
   callback(new ShareDBError(ERROR_CODE.ERR_DATABASE_METHOD_NOT_IMPLEMENTED, 'getOps DB method unimplemented'));
 };
 
+// 获取Ops到快照
 DB.prototype.getOpsToSnapshot = function(collection, id, from, snapshot, options, callback) {
   var to = snapshot.v;
   this.getOps(collection, id, from, to, options, callback);
@@ -65,6 +66,7 @@ DB.prototype.getOpsBulk = function(collection, fromMap, toMap, options, callback
   });
 };
 
+// 获取提交的Op版本
 DB.prototype.getCommittedOpVersion = function(collection, id, snapshot, op, options, callback) {
   this.getOpsToSnapshot(collection, id, 0, snapshot, options, function(err, ops) {
     if (err) return callback(err);

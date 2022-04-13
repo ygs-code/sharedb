@@ -43,6 +43,7 @@ function SubmitRequest(backend, agent, index, id, op, options) {
 }
 module.exports = SubmitRequest;
 
+// 发送op给其他客户
 SubmitRequest.prototype.submit = function (callback) {
     var request = this;
     var backend = this.backend;
@@ -51,10 +52,13 @@ SubmitRequest.prototype.submit = function (callback) {
     var op = this.op;
     // Send a special projection so that getSnapshot knows to return all fields.
     // With a null projection, it strips document metadata
+    //发送一个特殊的投影，以便getSnapshot知道返回所有字段。
+    //对于null投影，它剥离文档元数据
     var fields = { $submit: true };
 
     var snapshotOptions = {};
     snapshotOptions.agentCustom = request.agent.custom;
+    // 从数据取出文档
     backend.db.getSnapshot(
         collection,
         id,
@@ -64,6 +68,7 @@ SubmitRequest.prototype.submit = function (callback) {
             if (err) return callback(err);
 
             request.snapshot = snapshot;
+            //
             request._addSnapshotMeta();
 
             if (op.v == null) {
@@ -75,6 +80,13 @@ SubmitRequest.prototype.submit = function (callback) {
                     // case, we should return a non-fatal 'Op already submitted' error. We
                     // must get the past ops and check their src and seq values to
                     // differentiate.
+                    //如果文档已经被另一个操作创建，我们将返回a
+                    //“文档已经存在”的响应错误，并未能提交此
+                    // 然而，这种情况也可能发生在op是
+                    //已经提交，并且创建的op只是重新发送。 在那
+                    // case，我们应该返回一个非致命的'Op already submitted'错误。 我们
+                    //必须获取过去的操作并检查它们的SRC和seq值
+                    //区分。
                     backend.db.getCommittedOpVersion(
                         collection,
                         id,
@@ -144,6 +156,7 @@ SubmitRequest.prototype.submit = function (callback) {
     );
 };
 
+//
 SubmitRequest.prototype.apply = function (callback) {
     // If we're being projected, verify that the op is allowed
     var projection = this.projection;
@@ -156,6 +169,9 @@ SubmitRequest.prototype.apply = function (callback) {
 
     // Always set the channels before each attempt to apply. If the channels are
     // modified in a middleware and we retry, we want to reset to a new array
+    //每次尝试应用之前总是设置通道。 如果通道是
+    //在中间件中修改，我们重试，我们想重置到一个新的数组
+    // 获取文档key
     this.channels = this.backend.getChannels(this.collection, this.id);
 
     var request = this;
@@ -166,7 +182,8 @@ SubmitRequest.prototype.apply = function (callback) {
         function (err) {
             if (err) return callback(err);
 
-            // Apply the submitted op to the snapshot
+            // Apply the submitted op to the snapshot //将提交的op应用到快照
+            // 合并op
             err = ot.apply(request.snapshot, request.op);
             if (err) return callback(err);
 
@@ -187,6 +204,7 @@ SubmitRequest.prototype.commit = function (callback) {
             if (err) return callback(err);
 
             // Try committing the operation and snapshot to the database atomically
+            //尝试以原子方式提交操作和快照  
             backend.db.commit(
                 request.collection,
                 request.id,
@@ -210,7 +228,7 @@ SubmitRequest.prototype.commit = function (callback) {
                         if (request.collection !== request.index)
                             op.i = request.index;
                         //发布数据给 stream.on('data',()=>{}) 订阅数据监听
-                        console.log('backend.pubsub.publish=',op)
+                        console.log('backend.pubsub.publish=', op);
                         backend.pubsub.publish(request.channels, op);
                     }
                     if (
@@ -265,11 +283,11 @@ SubmitRequest.prototype._addOpMeta = function () {
         ts: this.start,
     };
     if (this.op.create) {
-        // Consistently store the full URI of the type, not just its short name
+        // Consistently store the full URI of the type, not just its short name 始终存储该类型的完整URI，而不仅仅是它的短名称
         this.op.create.type = ot.normalizeType(this.op.create.type);
     }
 };
-
+// 添加快照元
 SubmitRequest.prototype._addSnapshotMeta = function () {
     var meta = this.snapshot.m || (this.snapshot.m = {});
     if (this.op.create) {

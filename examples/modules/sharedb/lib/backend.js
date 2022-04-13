@@ -292,7 +292,7 @@ Backend.prototype.submit = function (
         backend.emit('submitRequestEnd', error, request);
         originalCallback(error, ops);
     };
-
+    // 检测op
     var err = ot.checkOp(op);
     if (err) return callback(err);
     backend.trigger(
@@ -301,6 +301,7 @@ Backend.prototype.submit = function (
         request,
         function (err) {
             if (err) return callback(err);
+            // 发送op给其他客户
             request.submit(function (err) {
                 if (err) return callback(err);
                 backend.trigger(
@@ -1150,6 +1151,7 @@ Backend.prototype.getDocChannel = function (collection, id) {
     return collection + '.' + id;
 };
 
+//获取 文档key
 Backend.prototype.getChannels = function (collection, id) {
     return [
         this.getCollectionChannel(collection),
@@ -1164,6 +1166,7 @@ Backend.prototype.fetchSnapshot = function (
     version,
     callback
 ) {
+    debugger
     var start = Date.now();
     var backend = this;
     var projection = this.projections[index];
@@ -1401,6 +1404,7 @@ Backend.prototype._buildSnapshotFromOps = function (
     ops,
     callback
 ) {
+    debugger
     var snapshot =
         startingSnapshot || new Snapshot(id, 0, null, undefined, null);
     var error = ot.applyOps(snapshot, ops, { _normalizeLegacyJson0Ops: true });

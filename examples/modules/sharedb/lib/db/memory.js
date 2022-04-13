@@ -37,6 +37,8 @@ MemoryDB.prototype.close = function(callback) {
 
 // Persists an op and snapshot if it is for the next version. Calls back with
 // callback(err, succeeded)
+//保存下一个版本的op和快照。 电话用  
+ 
 MemoryDB.prototype.commit = function(collection, id, op, snapshot, options, callback) {
   var db = this;
   if (typeof callback !== 'function') throw new Error('Callback required');

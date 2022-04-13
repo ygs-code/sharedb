@@ -10,6 +10,7 @@ var util = require('./util');
 var ERROR_CODE = ShareDBError.CODES;
 
 // Returns an error string on failure. Rockin' it C style.
+//失败时返回一个错误字符串。 检测 op
 exports.checkOp = function(op) {
   if (op == null || typeof op !== 'object') {
     return new ShareDBError(ERROR_CODE.ERR_OT_OP_BADLY_FORMED, 'Op must be an object');
@@ -217,6 +218,8 @@ exports.transformPresence = function(presence, op, isOwnOp) {
  * have this stricter validation. This method fixes up legacy ops to
  * pass the stricter validation
  */
+
+// 合并 op
 function normalizeLegacyJson0Ops(snapshot, json0Op) {
   if (snapshot.type !== types.defaultType.uri) return;
   var components = json0Op.op;
