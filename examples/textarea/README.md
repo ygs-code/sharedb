@@ -45,29 +45,138 @@ text-diff-binding包 计算op位置和光标处理
 
 客户端代码流程
 
-第一创建websocket连接
+### 创建websocket连接
 
 ```
 var socket = new ReconnectingWebSocket("ws://" + window.location.host);
 
-// 获取文档 
+// 创建Connection文档连接类，把socket传进去
 var connection = new sharedb.Connection(socket);
+```
 
 
+
+### 绑定Socket
+
+调用Connection构造函数，Connection构造函数则调用bindToSocket，绑定Socket
+
+```
+// 绑定 Socket
+Connection.prototype.bindToSocket = function (socket) {
+  if (this.socket) {
+    // 关闭连接
+    this.socket.close();
+    this.socket.onmessage = null;
+    this.socket.onopen = null;
+    this.socket.onerror = null;
+    this.socket.onclose = null;
+  }
+
+  this.socket = socket;
+
+  // State of the connection. The corresponding events are emitted when this changes
+  //
+  // - 'connecting'   The connection is still being established, or we are still
+  //                    waiting on the server to send us the initialization message
+  // - 'connected'    The connection is open and we have connected to a server
+  //                    and recieved the initialization message
+  // - 'disconnected' Connection is closed, but it will reconnect automatically
+  // - 'closed'       The connection was closed by the client, and will not reconnect
+  // - 'stopped'      The connection was closed by the server, and will not reconnect
+  // 获取最新的状态
+  var newState = connectionState(socket);
+  // 设置socket状态
+  this._setState(newState);
+
+  // This is a helper variable the document uses to see whether we're
+  // currently in a 'live' state. It is true if and only if we're connected
+  this.canSend = false;
+
+  var connection = this;
+  // 获取socket消息
+  socket.onmessage = function (event) {
+    console.log("event=", event);
+    debugger
+    try {
+      var data =
+        typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+    } catch (err) {
+      logger.warn("Failed to parse message", event);
+      return;
+    }
+
+    if (connection.debug) {
+      logger.info("RECV", JSON.stringify(data));
+    }
+
+    var request = { data: data };
+    connection.emit("receive", request);
+    if (!request.data) return;
+
+    try {
+    // 如果有消息
+      connection.handleMessage(request.data);
+    } catch (err) {
+      util.nextTick(function () {
+        connection.emit("error", err);
+      });
+    }
+  };
+
+  // If socket is already open, do handshake immediately. //如果socket已经打开，立即握手。
+  // 如果socket已经打开，则先发一个 hs 给服务器
+  if (socket.readyState === 1) {
+    
+    connection._initializeHandshake();
+  }
+
+  // socket 已经连接上
+  socket.onopen = function () {
+    // 设置状态
+    connection._setState("connecting");
+    debugger
+    connection._initializeHandshake();
+  };
+
+// 省略其他代码
+
+
+};
+
+```
+
+### 发送 { a: "hs", id: this.id } 给服务器
+
+socket.onopen如果已经连上了 ,此时socket连接上会发送 { a: "hs", id: this.id } 给服务器
+
+```
+  // socket 已经连接上
+  socket.onopen = function () {
+    // 设置状态
+    connection._setState("connecting");
  
-
-
-
+    connection._initializeHandshake();
+  };
 ```
 
-连接 socket ,此时如果socket连接上会发送 { a: "hs", id: this.id } 给服务器
+ 发送{ a: "hs", id: this.id }给服务器
 
-```
-// 获取文档 
-var connection = new sharedb.Connection(socket);
-```
+ ```
+// 发送{ a: "hs", id: this.id }给服务器
+Connection.prototype._initializeHandshake = function () {
+  // 发送 消息
+  this.send({ a: "hs", id: this.id });
+};
 
- 然后服务器在返回一个{"a":"init","protocol":1,"protocolMinor":1,"id":"b7d0c9c69be7d08395ce68c2c0f81916","type":"http://sharejs.org/types/JSONv0"}数据回来
+ ```
+
+
+
+
+
+
+
+然后服务器在返回一个{"a":"init","protocol":1,"protocolMinor":1,"id":"b7d0c9c69be7d08395ce68c2c0f81916","type":"http://sharejs.org/types/JSONv0"}数据回来
 
 客户端再发一次 { a: "hs", id: this.id } 给服务器
 
@@ -106,6 +215,24 @@ doc.subscribe(function (err) {
 });
 
 ```
+
+
+
+StringBinding
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

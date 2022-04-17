@@ -250,6 +250,7 @@ TextDiffBinding.prototype._transformSelectionAndUpdate = function (
 // 更新文档到真实dom中
 TextDiffBinding.prototype.update = function () {
   var value = this._get();
+  // 获取dom的value
   if (this._getElementValue() === value) {
     return;
   }

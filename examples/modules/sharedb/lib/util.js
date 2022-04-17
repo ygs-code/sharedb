@@ -84,6 +84,7 @@ exports.truthy = function(arg) {
 
 exports.nextTick = function(callback) {
   if (typeof process !== 'undefined' && process.nextTick) {
+  
     return process.nextTick.apply(null, arguments);
   }
 
@@ -93,6 +94,7 @@ exports.nextTick = function(callback) {
   }
 
   setTimeout(function() {
+    
     callback.apply(null, args);
   });
 };

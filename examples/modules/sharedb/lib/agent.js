@@ -89,6 +89,7 @@ function Agent(
 
     // Send the legacy message to initialize old clients with the random agent Id
     //发送旧消息初始化旧客户端随机代理Id
+    console.log('init=================')
     this.send(this._initMessage('init'));
 }
 module.exports = Agent;
@@ -531,6 +532,7 @@ Agent.prototype._handleMessage = function (request, callback) {
                 if (request.id) {
                     this.src = request.id;
                 }
+                debugger
                 return callback(null, this._initMessage('hs'));
             case 'qf':
                 return this._queryFetch(
@@ -1036,8 +1038,9 @@ Agent.prototype._fetchSnapshotByTimestamp = function (
     );
 };
 
-//发送一个初始化
+//发送一个初始化 给客户端
 Agent.prototype._initMessage = function (action) {
+    debugger
     return {
         a: action,
         protocol: 1,

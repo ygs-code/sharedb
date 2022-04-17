@@ -841,9 +841,11 @@ Connection.prototype._handleLegacyInit = function (message) {
   // 设置已经连上状态
   this._initialize(message);
 };
-// 初始化告诉服务器 客户端webscoket已经连上
+
+// 发送{ a: "hs", id: this.id }给服务器
 Connection.prototype._initializeHandshake = function () {
   // 发送 消息
+  debugger
   this.send({ a: "hs", id: this.id });
 };
 

@@ -48,12 +48,12 @@ socket.addEventListener("error", function () {
 var doc = connection.get("examples", "textarea");
 console.log("doc.subscribe=", doc.subscribe);
 // 获取到文档对象
-doc.subscribe(function (err) {
-  if (err) {
-    throw err;
-  }
-  //绑定 input 事件
-  var binding = new StringBinding(element, doc, ["content"]);
-  // 初始化
-  binding.setup();
-});
+// doc.subscribe(function (err) {
+//   if (err) {
+//     throw err;
+//   }
+//   //绑定 input 事件
+//   var binding = new StringBinding(element, doc, ["content"]);
+//   // 初始化
+//   binding.setup();
+// });

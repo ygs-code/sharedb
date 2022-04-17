@@ -4,6 +4,8 @@
   "description": "A simple client/server app using ShareDB and WebSockets",
   "main": "server.js",
   "scripts": {
+    "log": "pm2 log",
+    "clrarLog": "pm2 flush",
     "build": "browserify client.js -o static/dist/bundle.js",
     "buildBrowserify": "node buildBrowserify.js",
     "test": "echo \"Error: no test specified\" && exit 1",

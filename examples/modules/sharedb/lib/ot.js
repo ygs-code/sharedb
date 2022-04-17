@@ -110,6 +110,8 @@ function applyOpEdit(snapshot, edit) {
   if (!type) return new ShareDBError(ERROR_CODE.ERR_DOC_TYPE_NOT_RECOGNIZED, 'Unknown type');
 
   try {
+    console.log('applyOpEdit')
+    debugger
     snapshot.data = type.apply(snapshot.data, edit);
   } catch (err) {
     return new ShareDBError(ERROR_CODE.ERR_OT_OP_NOT_APPLIED, err.message);
@@ -176,6 +178,8 @@ exports.applyOps = function(snapshot, ops, options) {
       }
     }
     snapshot.v = op.v;
+    console.log('applyOps=======')
+    debugger
     var error = exports.apply(snapshot, op);
     if (error) return error;
   }
@@ -248,6 +252,13 @@ function normalizeLegacyJson0Ops(snapshot, json0Op) {
     // Apply to update the snapshot, so we can correctly check the path for
     // the next component. We don't need to do this on the final iteration,
     // since there's no more ops.
+    //
+
+    //应用更新快照，这样我们可以正确地检查路径
+//下一个组件。我们不需要在最后一次迭代时这么做，
+//因为没有更多的操作。
+   console.log('types.defaultType.apply===')
+   debugger;
     if (i < components.length - 1) data = types.defaultType.apply(data, [component]);
   }
 }

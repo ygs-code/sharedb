@@ -375,6 +375,7 @@ Doc.prototype._handleSubscribe = function (error, snapshot) {
   this._flushSubscribe();
 };
 
+//
 Doc.prototype._handleOp = function (err, message) {
   if (err) {
     if (this.inflightOp) {
@@ -430,6 +431,8 @@ Doc.prototype._handleOp = function (err, message) {
 
   this.version++;
   try {
+    console.log('有op操作 _handleOp')
+    debugger
     this._otApply(message, false);
   } catch (error) {
     return this._hardRollback(error);
@@ -667,6 +670,7 @@ function transformX(client, server) {
  *
  * @private
  */
+// 合并op
 Doc.prototype._otApply = function (op, source) {
   if ("op" in op) {
     if (!this.type) {
@@ -736,6 +740,7 @@ Doc.prototype._otApply = function (op, source) {
         console.log('this.data=========',this.data)
         console.log('componentOp.op=========',componentOp.op)
         console.log('this.type.apply(this.data, componentOp.op)=========',this.type.apply(this.data, componentOp.op))
+        debugger
         this._setData(this.type.apply(this.data, componentOp.op));
         
         //发布
@@ -752,7 +757,8 @@ Doc.prototype._otApply = function (op, source) {
     
     this.emit("before op", op.op, source, op.src);
     // Apply the operation to the local data, mutating it in place
-    
+    console.log('this.type.apply')
+    debugger
     this._setData(this.type.apply(this.data, op.op));
     // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with
@@ -855,6 +861,7 @@ Doc.prototype._sendOp = function () {
 // @param [op.create]
 // @param [callback] called when operation is submitted
 
+// 提交
 Doc.prototype._submit = function (
   op, //op操作
   source, //source: StringBinding 实例对象
@@ -894,6 +901,8 @@ Doc.prototype._submit = function (
       source, //source: StringBinding 实例对象
       callback // 回调函数
     );
+    console.log('提交 _submit')
+    debugger
     this._otApply(
       op, //op操作
       source //source: StringBinding 实例对象
@@ -1008,6 +1017,8 @@ Doc.prototype._tryCompose = function (op) {
   // Compose an op into a create by applying it. This effectively makes the op
   // invisible, as if the document were created including the op originally
   if (last.create && "op" in op) {
+    console.log('last.create')
+    debugger
     last.create.data = this.type.apply(last.create.data, op.op);
     return last;
   }

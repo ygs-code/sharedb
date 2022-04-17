@@ -116,6 +116,12 @@ SubmitRequest.prototype.submit = function (callback) {
             if (op.v === snapshot.v) {
                 // The snapshot hasn't changed since the op's base version. Apply
                 // without transforming the op
+           
+                console.log('backend.db.getSnapshot')
+                console.log('request.apply=',request.apply)
+                console.log('request.apply.name=',request.apply.name)
+                console.log('request.apply.name=',request.apply.toString())
+                debugger
                 return request.apply(callback);
             }
 
@@ -148,7 +154,8 @@ SubmitRequest.prototype.submit = function (callback) {
                         // sure we have transformed the op to the current snapshot version
                         return callback(request.versionAfterTransformError());
                     }
-
+                    console.log('request.apply')
+                   debugger
                     request.apply(callback);
                 }
             );
@@ -156,7 +163,7 @@ SubmitRequest.prototype.submit = function (callback) {
     );
 };
 
-//
+//合并op
 SubmitRequest.prototype.apply = function (callback) {
     // If we're being projected, verify that the op is allowed
     var projection = this.projection;
@@ -184,6 +191,8 @@ SubmitRequest.prototype.apply = function (callback) {
 
             // Apply the submitted op to the snapshot //将提交的op应用到快照
             // 合并op
+            console.log(' this.backend.trigger==')
+            debugger
             err = ot.apply(request.snapshot, request.op);
             if (err) return callback(err);
 

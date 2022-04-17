@@ -136,8 +136,10 @@ Backend.prototype.connect = function (connection, req, callback) {
     // 创建 doc  socket
     var socket = new StreamSocket();
     if (connection) {
+        // 客户端
         connection.bindToSocket(socket);
     } else {
+        // 服务端
         connection = new Connection(socket);
     }
     socket._open();
