@@ -31,7 +31,7 @@ function createDoc(callback) {
       doc.create({ content: "" }, callback);
       return;
     }
-    callback();
+    // callback();
   });
 }
 
@@ -45,6 +45,7 @@ function startServer() {
   var wss = new WebSocket.Server({ server: server });
   wss.on("connection", function (ws) {
     console.log('connection==========')
+    // 远程socket
     var stream = new WebSocketJSONStream(ws);
     // stream.write({
     //   name:'abc'
