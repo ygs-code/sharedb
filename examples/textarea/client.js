@@ -2,7 +2,7 @@
  * @Date: 2022-03-31 09:46:25
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-04-06 13:04:25
+ * @LastEditTime: 2022-04-19 17:51:19
  * @FilePath: /sharedb/examples/textarea/client.js
  * @Description:
  */
@@ -48,12 +48,12 @@ socket.addEventListener("error", function () {
 var doc = connection.get("examples", "textarea");
 console.log("doc.subscribe=", doc.subscribe);
 // 获取到文档对象
-// doc.subscribe(function (err) {
-//   if (err) {
-//     throw err;
-//   }
-//   //绑定 input 事件
-//   var binding = new StringBinding(element, doc, ["content"]);
-//   // 初始化
-//   binding.setup();
-// });
+doc.subscribe(function (err) {
+  if (err) {
+    throw err;
+  }
+  //绑定 input 事件
+  var binding = new StringBinding(element, doc, ["content"]);
+  // 初始化
+   binding.setup();  
+});

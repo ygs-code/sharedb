@@ -1,3 +1,11 @@
+/*
+ * @Date: 2022-04-19 09:54:46
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-04-19 17:40:49
+ * @FilePath: /sharedb/examples/textarea/server.js
+ * @Description: 
+ */
 var http = require("http");
 var express = require("express");
 // var ShareDB = require("sharedb");
@@ -22,7 +30,7 @@ function createDoc(callback) {
   var connection = backend.connect();
   // 获取文档
   var doc = connection.get("examples", "textarea");
-  console.log('doc=========',doc)
+  // console.log('doc=========',doc)
   //
   doc.fetch(function (err) {
     if (err) throw err;
@@ -31,11 +39,12 @@ function createDoc(callback) {
       doc.create({ content: "" }, callback);
       return;
     }
-    // callback();
+    callback();
   });
 }
 
 function startServer() {
+  // return 
   // Create a web server to serve files and listen to WebSocket connections
   var app = express();
   app.use(express.static("static"));
