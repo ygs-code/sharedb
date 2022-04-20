@@ -117,11 +117,11 @@ SubmitRequest.prototype.submit = function (callback) {
                 // The snapshot hasn't changed since the op's base version. Apply
                 // without transforming the op
            
-                console.log('backend.db.getSnapshot')
-                console.log('request.apply=',request.apply)
-                console.log('request.apply.name=',request.apply.name)
-                console.log('request.apply.name=',request.apply.toString())
-                debugger
+                // console.log('backend.db.getSnapshot')
+                // console.log('request.apply=',request.apply)
+                // console.log('request.apply.name=',request.apply.name)
+                // console.log('request.apply.name=',request.apply.toString())
+                // debugger
                 return request.apply(callback);
             }
 
@@ -191,8 +191,8 @@ SubmitRequest.prototype.apply = function (callback) {
 
             // Apply the submitted op to the snapshot //将提交的op应用到快照
             // 合并op
-            console.log(' this.backend.trigger==')
-            debugger
+            // console.log(' this.backend.trigger==')
+            // debugger
             err = ot.apply(request.snapshot, request.op);
             if (err) return callback(err);
 
@@ -237,7 +237,7 @@ SubmitRequest.prototype.commit = function (callback) {
                         if (request.collection !== request.index)
                             op.i = request.index;
                         //发布数据给 stream.on('data',()=>{}) 订阅数据监听
-                        console.log('backend.pubsub.publish=', op);
+                        // console.log('backend.pubsub.publish=', op);
                         backend.pubsub.publish(request.channels, op);
                     }
                     if (

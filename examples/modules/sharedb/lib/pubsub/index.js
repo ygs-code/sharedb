@@ -92,7 +92,7 @@ PubSub.prototype.publish = function(channels, data, callback) {
       channels[i] = this.prefix + ' ' + channels[i];
     }
   }
-  console.log('channels=',channels)
+  // console.log('channels=',channels)
 
    //发布数据给 stream.on('data',()=>{}) 订阅数据监听
   this._publish(channels, data, callback);

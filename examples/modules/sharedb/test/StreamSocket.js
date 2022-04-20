@@ -1,3 +1,11 @@
+/*
+ * @Date: 2022-04-19 09:54:46
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-04-19 10:41:07
+ * @FilePath: /sharedb/examples/modules/sharedb/test/StreamSocket.js
+ * @Description: 
+ */
 var async = require("async");
 var Agent = require("../lib/agent.js");
 var Connection = require("../lib/client/connection");
@@ -69,7 +77,7 @@ var doc = connection.get("examples", "textarea");
   //
   doc.fetch(function (err) {
     if (err) throw err;
-    console.log('doc==========',doc)
+ 
     if (doc.type === null) {
       // 创建一个空的文档
       doc.create({ content: "" }, callback);

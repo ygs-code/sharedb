@@ -13,7 +13,7 @@ var logger = require("../logger");
 var ERROR_CODE = ShareDBError.CODES;
 
 // 如果状态等于 0 或者 1 那么 就是在连接中
-function connectionState (socket) {
+function connectionState(socket) {
   if (socket.readyState === 0 || socket.readyState === 1) return "connecting";
   return "disconnected";
 }
@@ -39,7 +39,7 @@ function connectionState (socket) {
  */
 module.exports = Connection;
 // 构造函数
-function Connection (
+function Connection(
   socket //socket对象
 ) {
   // 引入 events 模块 发布订阅事件
@@ -144,8 +144,8 @@ Connection.prototype.bindToSocket = function (socket) {
   var connection = this;
   // 获取socket消息
   socket.onmessage = function (event) {
-    console.log("event=", event);
-    debugger
+    // console.log("event=", event);
+    // debugger
     try {
       var data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
@@ -163,6 +163,7 @@ Connection.prototype.bindToSocket = function (socket) {
     if (!request.data) return;
 
     try {
+      // 接收到服务器消息
       connection.handleMessage(request.data);
     } catch (err) {
       util.nextTick(function () {
@@ -174,7 +175,7 @@ Connection.prototype.bindToSocket = function (socket) {
   // If socket is already open, do handshake immediately. //如果socket已经打开，立即握手。
   // 如果socket已经打开，则先发一个 hs 给服务器
   if (socket.readyState === 1) {
-    debugger
+    debugger;
     connection._initializeHandshake();
   }
 
@@ -182,7 +183,7 @@ Connection.prototype.bindToSocket = function (socket) {
   socket.onopen = function () {
     // 设置状态
     connection._setState("connecting");
-    debugger
+    debugger;
     connection._initializeHandshake();
   };
 
@@ -217,8 +218,8 @@ Connection.prototype.bindToSocket = function (socket) {
  */
 // websocket 响应信息
 Connection.prototype.handleMessage = function (message) {
-  console.log("message1=", message);
-  debugger
+  // console.log("message1=", message);
+  // debugger
   var err = null;
   if (message.error) {
     err = wrapErrorData(message.error, message);
@@ -296,7 +297,7 @@ Connection.prototype.handleMessage = function (message) {
   }
 };
 
-function wrapErrorData (errorData, fullMessage) {
+function wrapErrorData(errorData, fullMessage) {
   // wrap in Error object so can be passed through event emitters
   var err = new Error(errorData.message);
   err.code = errorData.code;
@@ -378,27 +379,35 @@ Connection.prototype._setState = function (newState, reason) {
 
   // Group subscribes together to help server make more efficient calls 分组订阅可以帮助服务器进行更高效的呼叫
   this.startBulk();
-  // Emit the event to all queries
+  // Emit the event to all queries 向所有查询发出事件
   for (var id in this.queries) {
     var query = this.queries[id];
     query._onConnectionStateChanged();
   }
-  // Emit the event to all documents
+  console.log(" this.bulk =", this.bulk);
+  // Emit the event to all documents 向所有文档发出事件
+
   for (var collection in this.collections) {
     var docs = this.collections[collection];
+    console.log("docs=", docs);
     for (var id in docs) {
       docs[id]._onConnectionStateChanged();
     }
   }
-  // Emit the event to all Presences
+  console.log(" this.bulk =", this.bulk);
+  debugger;
+  // Emit the event to all Presences //向所有存在发出事件
   for (var channel in this._presences) {
     this._presences[channel]._onConnectionStateChanged();
   }
-  // Emit the event to all snapshots
+  console.log(" this.bulk =", this.bulk);
+  // Emit the event to all snapshots //将事件发送到所有快照
   for (var id in this._snapshotRequests) {
     var snapshotRequest = this._snapshotRequests[id];
     snapshotRequest._onConnectionStateChanged();
   }
+  console.log(" this.bulk =", this.bulk);
+  debugger;
   this.endBulk();
 
   this.emit(newState, reason);
@@ -413,10 +422,12 @@ Connection.prototype.startBulk = function () {
 };
 
 Connection.prototype.endBulk = function () {
+  debugger;
   if (this.bulk) {
     for (var collection in this.bulk) {
       var actions = this.bulk[collection];
       this._sendBulk("f", collection, actions.f);
+      debugger;
       this._sendBulk("s", collection, actions.s);
       this._sendBulk("u", collection, actions.u);
     }
@@ -442,45 +453,88 @@ Connection.prototype._sendBulk = function (action, collection, values) {
   }
   if (ids.length === 1) {
     var id = ids[0];
+    debugger;
     this.send({ a: action, c: collection, d: id });
   } else if (ids.length) {
+    debugger;
     this.send({ a: "b" + action, c: collection, b: ids });
   }
   if (versionsCount === 1) {
     var version = versions[versionId];
+    debugger;
     this.send({ a: action, c: collection, d: versionId, v: version });
   } else if (versionsCount) {
+    debugger;
     this.send({ a: "b" + action, c: collection, b: versions });
   }
 };
 
-// 发送动作  // 把文档注入到this.collections对象中
+// 发送动作  // 把文档注入到this.collections对象中 ，为this.bulk注入action和版本号
 Connection.prototype._sendAction = function (
   action, // 动作
   doc, // 文档对象
-  version
+  version // 版本号
 ) {
   // Ensure the doc is registered so that it receives the reply message
 
   // 把文档注入到this.collections对象中
   this._addDoc(doc);
+  console.log("this.bulk===========", this.bulk);
+  console.log("this.bulk===========", this.bulk);
+  debugger;
 
   if (this.bulk) {
     //批量订阅
     // Bulk subscribe  collection 文档集合key
-    var actions = this.bulk[doc.collection] || (this.bulk[doc.collection] = {});
-    console.log("actions=", actions);
-    console.log("doc.collection=", actions);
+    // actions = this.bulk[doc.collection] = {}
+    /*
+     actions = this.bulk[doc.collection] = {}
+     相当于 this.bulk ={
+            [doc.collection] : {}    ,   // 然后等于actions
+     } 
 
+     var versions = actions[action] || (actions[action] = {});
+     actions[action] = {}
+     相当于
+    this.bulk ={
+            [doc.collection] : {
+              [action]:{}  // 然后等于actions
+            }    ,  
+     } 
+
+     action 如果是 's' 
+     那么 
+     this.bulk ={
+            [doc.collection] : {
+              's':{}// 然后等于actions
+            }    ,    
+     } 
+
+
+     var versions = actions[action] || (actions[action] = {});
+     versions[doc.id] = version; 
+     然后  相当于
+        this.bulk ={
+            [doc.collection] : {
+              's':{
+                [doc.id]:version
+              }
+            }    ,   // 然后等于actions
+        } 
+    */
+    var actions = this.bulk[doc.collection] || (this.bulk[doc.collection] = {});
     var versions = actions[action] || (actions[action] = {});
     var isDuplicate = versions.hasOwnProperty(doc.id);
-    versions[doc.id] = version; // 空
-    console.log("version=", version); // 空
-    console.log("isDuplicate=", isDuplicate); // 空
+    versions[doc.id] = version; //
+    // console.log("version=", version); //
+    // console.log("isDuplicate=", isDuplicate); //
+    console.log("this.bulk=", this.bulk);
+   
     return isDuplicate; // false
   } else {
     // Send single doc subscribe message 发送单个文档订阅消息
     var message = { a: action, c: doc.collection, d: doc.id, v: version };
+    debugger;
     this.send(message);
   }
 };
@@ -489,8 +543,9 @@ Connection.prototype.sendFetch = function (doc) {
   return this._sendAction("f", doc, doc.version);
 };
 
-//发送订阅 告诉服务器文档信息
+//发送订阅 告诉服务器文档信息 发送s
 Connection.prototype.sendSubscribe = function (doc) {
+  debugger;
   // 发送客户端文档信息给服务器
   return this._sendAction(
     "s",
@@ -505,6 +560,8 @@ Connection.prototype.sendUnsubscribe = function (doc) {
 
 // 发送op给服务器
 Connection.prototype.sendOp = function (doc, op) {
+  console.log("sendOp============");
+  debugger;
   // Ensure the doc is registered so that it receives the reply message
   // 把文档注入到this.collections对象中
   this._addDoc(doc);
@@ -530,9 +587,10 @@ Connection.prototype.sendOp = function (doc, op) {
   if (doc.submitSource) {
     message.x.source = op.source;
   }
-  console.log('message2=', message)
-  debugger
-  // 发消息给服务器 
+  // console.log('message2=', message)
+  // debugger
+  // 发消息给服务器
+  debugger;
   this.send(message);
 };
 
@@ -540,6 +598,8 @@ Connection.prototype.sendOp = function (doc, op) {
  * Sends a message down the socket 向套接字发送消息
  */
 Connection.prototype.send = function (message) {
+  console.log("message=", message);
+  debugger;
   if (this.debug) {
     logger.info("SEND", JSON.stringify(message));
   }
@@ -581,7 +641,8 @@ Connection.prototype.get = function (
     doc = docs[id] = new Doc(this, collection, id);
     this.emit("doc", doc);
   }
-
+  console.log("doc========", doc);
+  debugger;
   return doc;
 };
 
@@ -667,14 +728,14 @@ Connection.prototype.hasPending = function () {
     this._firstSnapshotRequest()
   );
 };
-function hasPending (object) {
+function hasPending(object) {
   return object.hasPending();
 }
 
 Connection.prototype.hasWritePending = function () {
   return !!this._firstDoc(hasWritePending);
 };
-function hasWritePending (object) {
+function hasWritePending(object) {
   return object.hasWritePending();
 }
 
@@ -835,7 +896,7 @@ Connection.prototype._handleLegacyInit = function (message) {
   //忽略响应。
   if (message.protocolMinor) {
     // 初始化告诉服务器 客户端已经连上
-    debugger
+    debugger;
     return this._initializeHandshake();
   }
   // 设置已经连上状态
@@ -845,7 +906,7 @@ Connection.prototype._handleLegacyInit = function (message) {
 // 发送{ a: "hs", id: this.id }给服务器
 Connection.prototype._initializeHandshake = function () {
   // 发送 消息
-  debugger
+  debugger;
   this.send({ a: "hs", id: this.id });
 };
 
@@ -911,6 +972,7 @@ Connection.prototype._sendPresenceAction = function (action, seq, presence) {
   // Ensure the presence is registered so that it receives the reply message
   this._addPresence(presence);
   var message = { a: action, ch: presence.channel, seq: seq };
+  debugger;
   this.send(message);
   return message.seq;
 };

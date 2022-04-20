@@ -24,7 +24,7 @@ module.exports = class WebSocketJSONStream extends Duplex {
     this.ws.addEventListener("message", ({ data }) => {
       let value;
 
-      console.log('接受websocket信息==========',data)
+      // console.log('接受websocket信息==========',data)
 
       try {
         value = JSON.parse(data);
@@ -59,8 +59,8 @@ module.exports = class WebSocketJSONStream extends Duplex {
       return callback(new Error("Can't JSON.stringify the value"));
     }
     //  websocket 发送信息
-    console.log('发消息给客户端')
-    console.log('json1=',json)
+    // console.log('发消息给客户端')
+    // console.log('json1=',json)
     this._send(json, callback);
   }
 
@@ -69,16 +69,16 @@ module.exports = class WebSocketJSONStream extends Duplex {
       const send = () => {
         this.ws.removeEventListener("open", send);
         this.ws.removeEventListener("close", send);
-        console.log('发消息给客户端')
-        console.log('json2=',json)
+        // console.log('发消息给客户端')
+        // console.log('json2=',json)
         this._send(json, callback);
       };
       this.ws.addEventListener("open", send);
       this.ws.addEventListener("close", send);
     } else if (this.ws.readyState === OPEN) {
       //  websocket 发送信息
-      console.log('发消息给客户端')
-      console.log('json3=',json)
+      // console.log('发消息给客户端')
+      // console.log('json3=',json)
       this.ws.send(json, callback);
     } else {
       const error = new Error("WebSocket CLOSING or CLOSED.");

@@ -1,3 +1,11 @@
+/*
+ * @Date: 2022-04-19 09:54:46
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-04-19 10:37:05
+ * @FilePath: /sharedb/examples/modules/sharedb/lib/pubsub/memory.js
+ * @Description: 
+ */
 var PubSub = require('./index');
 var util = require('../util');
 
@@ -26,7 +34,7 @@ MemoryPubSub.prototype._unsubscribe = function(channel, callback) {
 };
 
 MemoryPubSub.prototype._publish = function(channels, data, callback) {
-  console.log('channels==========',channels)
+  // console.log('channels==========',channels)
   var pubsub = this;
   util.nextTick(function() {
     for (var i = 0; i < channels.length; i++) {

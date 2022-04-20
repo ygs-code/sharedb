@@ -129,9 +129,9 @@ Backend.prototype.close = function (callback) {
 
 // 获取连接文档
 Backend.prototype.connect = function (connection, req, callback) {
-    console.log('connection======', connection);
-    console.log('req======', req);
-    console.log('callback======', callback);
+    // console.log('connection======', connection);
+    // console.log('req======', req);
+    // console.log('callback======', callback);
 
     // 创建 doc  socket
     var socket = new StreamSocket();
@@ -144,8 +144,8 @@ Backend.prototype.connect = function (connection, req, callback) {
     }
     socket._open();
 
-    console.log('this.listen2=');
-    console.log('socket===================', socket);
+    // console.log('this.listen2=');
+    // console.log('socket===================', socket);
     var agent = this.listen(socket.stream, req);
     // Store a reference to the agent on the connection for convenience. This is
     // not used internal to ShareDB, but it is handy for server-side only user
@@ -174,7 +174,7 @@ Backend.prototype.listen = function (
     req // node req
 ) {
     //
-    console.log('stream======================');
+    // console.log('stream======================');
 
     var agent = new Agent(this, stream);
     this.trigger(
@@ -185,6 +185,7 @@ Backend.prototype.listen = function (
             if (err) {
                 return agent.close(err);
             }
+            // open连接
             agent._open();
         }
     );
@@ -250,7 +251,7 @@ Backend.prototype.trigger = function (
     request.backend = this;
 
     var fns = this.middleware[action];
-    console.log('fns=======', fns);
+    // console.log('fns=======', fns);
     if (!fns) {
         return callback();
     }
@@ -776,15 +777,15 @@ Backend.prototype.subscribe = function (
     // 时间戳
     var start = Date.now();
     var projection = this.projections[index];
-    console.log('this.projections', projection);
+    // console.log('this.projections', projection);
 
     var collection = projection ? projection.target : index;
     // 获取文档集合key
-    console.log('index=======', index);
-    console.log('collection=======', collection);
-    console.log('id=======', id);
+    // console.log('index=======', index);
+    // console.log('collection=======', collection);
+    // console.log('id=======', id);
     var channel = this.getDocChannel(collection, id);
-    console.log('channel=======', channel);
+    // console.log('channel=======', channel);
 
     var backend = this;
     var request = {
@@ -801,7 +802,7 @@ Backend.prototype.subscribe = function (
     //   pubsub._createStream 创建stream
     backend.pubsub.subscribe(channel, function (err, stream) {
         if (err) return callback(err);
-        console.log('version========',version)
+        // console.log('version========',version)
         if (version == null) {
             // Subscribing from null means that the agent doesn't have a document
             // and needs to fetch it as well as subscribing

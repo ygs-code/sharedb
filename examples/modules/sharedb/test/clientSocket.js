@@ -1,3 +1,11 @@
+/*
+ * @Date: 2022-04-19 09:54:46
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-04-19 10:38:23
+ * @FilePath: /sharedb/examples/modules/sharedb/test/clientSocket.js
+ * @Description: 
+ */
 
 // 相当于订阅发布，不需要端口号啥的
 var StreamSocket = require("../lib/stream-socket");
@@ -22,7 +30,7 @@ socket.onclose = function (reason) {
 };
 // 获取服务端 socket消息
 socket.onmessage = function (event) {
-    console.log('event=',event)
+    // console.log('event=',event)
 };
 // 客户端推送给服务器
 socket.send(JSON.stringify({ name: "hello" }))

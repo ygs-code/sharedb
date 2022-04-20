@@ -1,8 +1,8 @@
-var hat = require('../../hat');
-var types = require('./types');
-var util = require('./util');
-var logger = require('./logger');
-var ShareDBError = require('./error');
+var hat = require("../../hat");
+var types = require("./types");
+var util = require("./util");
+var logger = require("./logger");
+var ShareDBError = require("./error");
 
 var ERROR_CODE = ShareDBError.CODES;
 
@@ -21,119 +21,119 @@ var ERROR_CODE = ShareDBError.CODES;
  * @param {Duplex} stream connection to a client
  */
 function Agent(
-    backend, // backend 实例
-    stream // webscoket 操作流
+  backend, // backend 实例
+  stream // webscoket 操作流
 ) {
-    this.backend = backend;
-    this.stream = stream;
+  this.backend = backend;
+  this.stream = stream;
 
-    this.clientId = hat();
-    // src is a client-configurable "id" which the client will set in its handshake,
-    // and attach to its ops. This should take precedence over clientId if set.
-    // Only legacy clients, or new clients connecting for the first time will use the
-    // Agent-provided clientId. Ideally we'll deprecate clientId in favour of src
-    // in the next breaking change.
-    // SRC是一个客户端可配置的id，客户端将在握手时设置，
-    //和附加到它的操作。 如果设置了，这应该优先于clientId。
-    //只有旧的客户端，或新客户端第一次连接将使用
-    // Agent-provided clientId。 理想情况下，我们会弃用clientId而用src
-    //在下一个打破改变。
-    this.src = null;
-    this.connectTime = Date.now();
+  this.clientId = hat();
+  // src is a client-configurable "id" which the client will set in its handshake,
+  // and attach to its ops. This should take precedence over clientId if set.
+  // Only legacy clients, or new clients connecting for the first time will use the
+  // Agent-provided clientId. Ideally we'll deprecate clientId in favour of src
+  // in the next breaking change.
+  // SRC是一个客户端可配置的id，客户端将在握手时设置，
+  //和附加到它的操作。 如果设置了，这应该优先于clientId。
+  //只有旧的客户端，或新客户端第一次连接将使用
+  // Agent-provided clientId。 理想情况下，我们会弃用clientId而用src
+  //在下一个打破改变。
+  this.src = null;
+  this.connectTime = Date.now();
 
-    // We need to track which documents are subscribed by the client. This is a
-    // map of collection -> id -> stream
-    //我们需要跟踪哪些文件被客户端订阅。 这是一个
-    // map的集合-> id ->流
-    this.subscribedDocs = {};
+  // We need to track which documents are subscribed by the client. This is a
+  // map of collection -> id -> stream
+  //我们需要跟踪哪些文件被客户端订阅。 这是一个
+  // map的集合-> id ->流
+  this.subscribedDocs = {};
 
-    // Map from queryId -> emitter
-    //映射从查询id ->发射器
-    this.subscribedQueries = {};
+  // Map from queryId -> emitter
+  //映射从查询id ->发射器
+  this.subscribedQueries = {};
 
-    // Track which documents are subscribed to presence by the client. This is a
-    // map of channel -> stream
-    //跟踪哪些文档被客户端订阅。 这是一个
-    // >通道的映射
-    this.subscribedPresences = {};
-    // Highest seq received for a subscription request. Any seq lower than this
-    // value is stale, and should be ignored. Used for keeping the subscription
-    // state in sync with the client's desired state. Map of channel -> seq
-    //订阅请求收到的最高seq。 低于这个的任何seq
-    // value是陈旧的，应该被忽略。 用于保存订阅
-    //状态与客户端期望的状态同步。 channel -> seq的映射
-    this.presenceSubscriptionSeq = {};
-    // Keep track of the last request that has been sent by each local presence
-    // belonging to this agent. This is used to generate a new disconnection
-    // request if the client disconnects ungracefully. This is a
-    // map of channel -> id -> request
-    //记录每个本地存在发送的最后一个请求
-    //属于这个代理。 这用于生成新的断开连接
-    //请求客户端断开连接。 这是一个
-    // channel -> id ->请求
-    this.presenceRequests = {};
+  // Track which documents are subscribed to presence by the client. This is a
+  // map of channel -> stream
+  //跟踪哪些文档被客户端订阅。 这是一个
+  // >通道的映射
+  this.subscribedPresences = {};
+  // Highest seq received for a subscription request. Any seq lower than this
+  // value is stale, and should be ignored. Used for keeping the subscription
+  // state in sync with the client's desired state. Map of channel -> seq
+  //订阅请求收到的最高seq。 低于这个的任何seq
+  // value是陈旧的，应该被忽略。 用于保存订阅
+  //状态与客户端期望的状态同步。 channel -> seq的映射
+  this.presenceSubscriptionSeq = {};
+  // Keep track of the last request that has been sent by each local presence
+  // belonging to this agent. This is used to generate a new disconnection
+  // request if the client disconnects ungracefully. This is a
+  // map of channel -> id -> request
+  //记录每个本地存在发送的最后一个请求
+  //属于这个代理。 这用于生成新的断开连接
+  //请求客户端断开连接。 这是一个
+  // channel -> id ->请求
+  this.presenceRequests = {};
 
-    // We need to track this manually to make sure we don't reply to messages
-    // after the stream was closed.
-    //我们需要手动跟踪这个，以确保我们不回复消息
-    //流关闭后。
-    this.closed = false;
+  // We need to track this manually to make sure we don't reply to messages
+  // after the stream was closed.
+  //我们需要手动跟踪这个，以确保我们不回复消息
+  //流关闭后。
+  this.closed = false;
 
-    // For custom use in middleware. The agent is a convenient place to cache
-    // session state in memory. It is in memory only as long as the session is
-    // active, and it is passed to each middleware call
-    //在中间件中自定义使用。 代理是一个方便缓存的地方
-    //会话状态 它只在会话存在时才在内存中
-    //活动的，它被传递到每个中间件调用
-    this.custom = {};
+  // For custom use in middleware. The agent is a convenient place to cache
+  // session state in memory. It is in memory only as long as the session is
+  // active, and it is passed to each middleware call
+  //在中间件中自定义使用。 代理是一个方便缓存的地方
+  //会话状态 它只在会话存在时才在内存中
+  //活动的，它被传递到每个中间件调用
+  this.custom = {};
 
-    // Send the legacy message to initialize old clients with the random agent Id
-    //发送旧消息初始化旧客户端随机代理Id
-    console.log('init=================')
-    this.send(this._initMessage('init'));
+  // Send the legacy message to initialize old clients with the random agent Id
+  //发送旧消息初始化旧客户端随机代理Id
+  // console.log('init=================')
+  this.send(this._initMessage("init"));
 }
 module.exports = Agent;
 
 // Close the agent with the client.
 Agent.prototype.close = function (err) {
-    if (err) {
-        logger.warn('Agent closed due to error', this._src(), err.stack || err);
-    }
-    if (this.closed) return;
-    // This will end the writable stream and emit 'finish'
-    this.stream.end();
+  if (err) {
+    logger.warn("Agent closed due to error", this._src(), err.stack || err);
+  }
+  if (this.closed) return;
+  // This will end the writable stream and emit 'finish'
+  this.stream.end();
 };
 
 Agent.prototype._cleanup = function () {
-    // Only clean up once if the stream emits both 'end' and 'close'.
-    if (this.closed) return;
+  // Only clean up once if the stream emits both 'end' and 'close'.
+  if (this.closed) return;
 
-    this.closed = true;
+  this.closed = true;
 
-    this.backend.agentsCount--;
-    if (!this.stream.isServer) this.backend.remoteAgentsCount--;
+  this.backend.agentsCount--;
+  if (!this.stream.isServer) this.backend.remoteAgentsCount--;
 
-    // Clean up doc subscription streams
-    for (var collection in this.subscribedDocs) {
-        var docs = this.subscribedDocs[collection];
-        for (var id in docs) {
-            var stream = docs[id];
-            stream.destroy();
-        }
+  // Clean up doc subscription streams
+  for (var collection in this.subscribedDocs) {
+    var docs = this.subscribedDocs[collection];
+    for (var id in docs) {
+      var stream = docs[id];
+      stream.destroy();
     }
-    this.subscribedDocs = {};
+  }
+  this.subscribedDocs = {};
 
-    for (var channel in this.subscribedPresences) {
-        this.subscribedPresences[channel].destroy();
-    }
-    this.subscribedPresences = {};
+  for (var channel in this.subscribedPresences) {
+    this.subscribedPresences[channel].destroy();
+  }
+  this.subscribedPresences = {};
 
-    // Clean up query subscription streams
-    for (var id in this.subscribedQueries) {
-        var emitter = this.subscribedQueries[id];
-        emitter.destroy();
-    }
-    this.subscribedQueries = {};
+  // Clean up query subscription streams
+  for (var id in this.subscribedQueries) {
+    var emitter = this.subscribedQueries[id];
+    emitter.destroy();
+  }
+  this.subscribedQueries = {};
 };
 
 /**
@@ -143,1120 +143,1063 @@ Agent.prototype._cleanup = function () {
  */
 // 其他客户端接收信息
 Agent.prototype._subscribeToStream = function (collection, id, stream) {
-    if (this.closed) return stream.destroy();
+  if (this.closed) return stream.destroy();
 
-    var streams =
-        this.subscribedDocs[collection] ||
-        (this.subscribedDocs[collection] = {});
+  var streams =
+    this.subscribedDocs[collection] || (this.subscribedDocs[collection] = {});
 
-    // If already subscribed to this document, destroy the previously subscribed stream
-    //如果已经订阅了这个文档，销毁之前订阅的流
-    var previous = streams[id];
-    if (previous) previous.destroy();
-    streams[id] = stream;
+  // If already subscribed to this document, destroy the previously subscribed stream
+  //如果已经订阅了这个文档，销毁之前订阅的流
+  var previous = streams[id];
+  if (previous) previous.destroy();
+  streams[id] = stream;
 
-    var agent = this;
-    // 其他人 socket 监听
-    stream.on('data', function (data) {
-        if (data.error) {
-            // Log then silently ignore errors in a subscription stream, since these
-            // may not be the client's fault, and they were not the result of a
-            // direct request by the client
-            logger.error(
-                'Doc subscription stream error',
-                collection,
-                id,
-                data.error
-            );
-            return;
-        }
+  var agent = this;
+  // 其他人 socket 监听
+  stream.on("data", function (data) {
+    if (data.error) {
+      // Log then silently ignore errors in a subscription stream, since these
+      // may not be the client's fault, and they were not the result of a
+      // direct request by the client
+      logger.error("Doc subscription stream error", collection, id, data.error);
+      return;
+    }
 
-        console.log('_onOp2'); 
-        console.log('collection=', collection);
-        console.log('id=', id);
-        console.log('data=', data);
-        agent._onOp(collection, id, data);
-    });
-    stream.on('end', function () {
-        // The op stream is done sending, so release its reference
-        var streams = agent.subscribedDocs[collection];
-        if (!streams || streams[id] !== stream) return;
-        delete streams[id];
-        if (util.hasKeys(streams)) return;
-        delete agent.subscribedDocs[collection];
-    });
+    // console.log('_onOp2');
+    // console.log('collection=', collection);
+    // console.log('id=', id);
+    // console.log('data=', data);
+    agent._onOp(collection, id, data);
+  });
+  stream.on("end", function () {
+    // The op stream is done sending, so release its reference
+    var streams = agent.subscribedDocs[collection];
+    if (!streams || streams[id] !== stream) return;
+    delete streams[id];
+    if (util.hasKeys(streams)) return;
+    delete agent.subscribedDocs[collection];
+  });
 };
 
 Agent.prototype._subscribeToPresenceStream = function (channel, stream) {
-    if (this.closed) return stream.destroy();
-    var agent = this;
+  if (this.closed) return stream.destroy();
+  var agent = this;
 
-    stream.on('data', function (data) {
-        if (data.error) {
-            logger.error(
-                'Presence subscription stream error',
-                channel,
-                data.error
-            );
-        }
-        agent._handlePresenceData(data);
-    });
+  stream.on("data", function (data) {
+    if (data.error) {
+      logger.error("Presence subscription stream error", channel, data.error);
+    }
+    agent._handlePresenceData(data);
+  });
 
-    stream.on('end', function () {
-        var requests = agent.presenceRequests[channel] || {};
-        for (var id in requests) {
-            var request = agent.presenceRequests[channel][id];
-            request.seq++;
-            request.p = null;
-            agent._broadcastPresence(request, function (error) {
-                if (error)
-                    logger.error(
-                        'Error broadcasting disconnect presence',
-                        channel,
-                        error
-                    );
-            });
-        }
-        if (agent.subscribedPresences[channel] === stream) {
-            delete agent.subscribedPresences[channel];
-        }
-        delete agent.presenceRequests[channel];
-    });
+  stream.on("end", function () {
+    var requests = agent.presenceRequests[channel] || {};
+    for (var id in requests) {
+      var request = agent.presenceRequests[channel][id];
+      request.seq++;
+      request.p = null;
+      agent._broadcastPresence(request, function (error) {
+        if (error)
+          logger.error(
+            "Error broadcasting disconnect presence",
+            channel,
+            error
+          );
+      });
+    }
+    if (agent.subscribedPresences[channel] === stream) {
+      delete agent.subscribedPresences[channel];
+    }
+    delete agent.presenceRequests[channel];
+  });
 };
 
 Agent.prototype._subscribeToQuery = function (
-    emitter,
-    queryId,
-    collection,
-    query
+  emitter,
+  queryId,
+  collection,
+  query
 ) {
-    var previous = this.subscribedQueries[queryId];
-    if (previous) previous.destroy();
-    this.subscribedQueries[queryId] = emitter;
+  var previous = this.subscribedQueries[queryId];
+  if (previous) previous.destroy();
+  this.subscribedQueries[queryId] = emitter;
 
-    var agent = this;
-    emitter.onExtra = function (extra) {
-        agent.send({ a: 'q', id: queryId, extra: extra });
-    };
+  var agent = this;
+  emitter.onExtra = function (extra) {
+    agent.send({ a: "q", id: queryId, extra: extra });
+  };
 
-    emitter.onDiff = function (diff) {
-        for (var i = 0; i < diff.length; i++) {
-            var item = diff[i];
-            if (item.type === 'insert') {
-                item.values = getResultsData(item.values);
-            }
-        }
-        // Consider stripping the collection out of the data we send here
-        // if it matches the query's collection.
-        agent.send({ a: 'q', id: queryId, diff: diff });
-    };
+  emitter.onDiff = function (diff) {
+    for (var i = 0; i < diff.length; i++) {
+      var item = diff[i];
+      if (item.type === "insert") {
+        item.values = getResultsData(item.values);
+      }
+    }
+    // Consider stripping the collection out of the data we send here
+    // if it matches the query's collection.
+    agent.send({ a: "q", id: queryId, diff: diff });
+  };
 
-    emitter.onError = function (err) {
-        // Log then silently ignore errors in a subscription stream, since these
-        // may not be the client's fault, and they were not the result of a
-        // direct request by the client
-        logger.error('Query subscription stream error', collection, query, err);
-    };
+  emitter.onError = function (err) {
+    // Log then silently ignore errors in a subscription stream, since these
+    // may not be the client's fault, and they were not the result of a
+    // direct request by the client
+    logger.error("Query subscription stream error", collection, query, err);
+  };
 
-    emitter.onOp = function (op) {
-        var id = op.d;
-        console.log('_onOp1');
-        agent._onOp(collection, id, op);
-    };
+  emitter.onOp = function (op) {
+    var id = op.d;
+    // console.log('_onOp1');
+    agent._onOp(collection, id, op);
+  };
 
-    emitter._open();
+  emitter._open();
 };
 
 Agent.prototype._onOp = function (collection, id, op) {
-    if (this._isOwnOp(collection, op)) return;
+  if (this._isOwnOp(collection, op)) return;
 
-    // Ops emitted here are coming directly from pubsub, which emits the same op
-    // object to listeners without making a copy. The pattern in middleware is to
-    // manipulate the passed in object, and projections are implemented the same
-    // way currently.
-    //
-    // Deep copying the op would be safest, but deep copies are very expensive,
-    // especially over arbitrary objects. This function makes a shallow copy of an
-    // op, and it requires that projections and any user middleware copy deep
-    // properties as needed when they modify the op.
-    //
-    // Polling of query subscriptions is determined by the same op objects. As a
-    // precaution against op middleware breaking query subscriptions, we delay
-    // before calling into projection and middleware code
-    var agent = this;
-    util.nextTick(function () {
-        var copy = shallowCopy(op);
-        console.log('agent.backend.sanitizeOp=', agent.backend.sanitizeOp);
-        agent.backend.sanitizeOp(agent, collection, id, copy, function (err) {
-            if (err) {
-                logger.error(
-                    'Error sanitizing op emitted from subscription',
-                    collection,
-                    id,
-                    copy,
-                    err
-                );
-                return;
-            }
-            console.log('agent._sendOp2=');
-            agent._sendOp(collection, id, copy);
-        });
+  // Ops emitted here are coming directly from pubsub, which emits the same op
+  // object to listeners without making a copy. The pattern in middleware is to
+  // manipulate the passed in object, and projections are implemented the same
+  // way currently.
+  //
+  // Deep copying the op would be safest, but deep copies are very expensive,
+  // especially over arbitrary objects. This function makes a shallow copy of an
+  // op, and it requires that projections and any user middleware copy deep
+  // properties as needed when they modify the op.
+  //
+  // Polling of query subscriptions is determined by the same op objects. As a
+  // precaution against op middleware breaking query subscriptions, we delay
+  // before calling into projection and middleware code
+  var agent = this;
+  util.nextTick(function () {
+    var copy = shallowCopy(op);
+    // console.log('agent.backend.sanitizeOp=', agent.backend.sanitizeOp);
+    agent.backend.sanitizeOp(agent, collection, id, copy, function (err) {
+      if (err) {
+        logger.error(
+          "Error sanitizing op emitted from subscription",
+          collection,
+          id,
+          copy,
+          err
+        );
+        return;
+      }
+      // console.log('agent._sendOp2=');
+      agent._sendOp(collection, id, copy);
     });
+  });
 };
 
 Agent.prototype._isOwnOp = function (collection, op) {
-    // Detect ops from this client on the same projection. Since the client sent
-    // these in, the submit reply will be sufficient and we can silently ignore
-    // them in the streams for subscribed documents or queries
-    return this._src() === op.src && collection === (op.i || op.c);
+  // Detect ops from this client on the same projection. Since the client sent
+  // these in, the submit reply will be sufficient and we can silently ignore
+  // them in the streams for subscribed documents or queries
+  return this._src() === op.src && collection === (op.i || op.c);
 };
 
 // 发送信息给客户端
 Agent.prototype.send = function (message) {
-    console.log('Agent.prototype.send  message = ', message);
-    // Quietly drop replies if the stream was closed
-    if (this.closed) return;
-    // 发消息给客户
-    this.stream.write(message);
+  console.log("Agent.prototype.send  message = ", message);
+  // Quietly drop replies if the stream was closed
+  if (this.closed) return;
+  // 发消息给客户
+  this.stream.write(message);
 };
 
 // 发送op给客户端
 Agent.prototype._sendOp = function (collection, id, op) {
-    var message = {
-        a: 'op',
-        c: collection,
-        d: id,
-        v: op.v,
-        src: op.src,
-        seq: op.seq,
-    };
-    if ('op' in op) {
-        message.op = op.op;
-    }
-    if (op.create) {
-        message.create = op.create;
-    }
-    if (op.del) {
-        message.del = true;
-    }
-    console.log('_sendOp message=', message);
-    // 给客户端发信息
-    this.send(message);
+  var message = {
+    a: "op",
+    c: collection,
+    d: id,
+    v: op.v,
+    src: op.src,
+    seq: op.seq,
+  };
+  if ("op" in op) {
+    message.op = op.op;
+  }
+  if (op.create) {
+    message.create = op.create;
+  }
+  if (op.del) {
+    message.del = true;
+  }
+  // console.log('_sendOp message=', message);
+  // 给客户端发信息
+  this.send(message);
 };
 
 // 发送op给客户端
 Agent.prototype._sendOps = function (collection, id, ops) {
-    console.log('Agent.prototype._sendOps=', ops);
-    for (var i = 0; i < ops.length; i++) {
-        console.log('this._sendOp1');
-        this._sendOp(collection, id, ops[i]);
-    }
+  // console.log('Agent.prototype._sendOps=', ops);
+  for (var i = 0; i < ops.length; i++) {
+    // console.log('this._sendOp1');
+    this._sendOp(collection, id, ops[i]);
+  }
 };
 Agent.prototype._sendOpsBulk = function (collection, opsMap) {
-    for (var id in opsMap) {
-        var ops = opsMap[id];
-        this._sendOps(collection, id, ops);
-    }
+  for (var id in opsMap) {
+    var ops = opsMap[id];
+    this._sendOps(collection, id, ops);
+  }
 };
 
 //获取应答错误对象
 function getReplyErrorObject(err) {
-    if (typeof err === 'string') {
-        return {
-            code: ERROR_CODE.ERR_UNKNOWN_ERROR,
-            message: err,
-        };
-    } else {
-        if (err.stack) {
-            logger.info(err.stack);
-        }
-        return {
-            code: err.code,
-            message: err.message,
-        };
+  if (typeof err === "string") {
+    return {
+      code: ERROR_CODE.ERR_UNKNOWN_ERROR,
+      message: err,
+    };
+  } else {
+    if (err.stack) {
+      logger.info(err.stack);
     }
+    return {
+      code: err.code,
+      message: err.message,
+    };
+  }
 }
 
 // 发送消息给自己客户端去除op操作
 Agent.prototype._reply = function (request, err, message) {
-  console.log('_reply=',request)
-    var agent = this;
-    var backend = agent.backend;
-    if (err) {
-        //获取应答错误对象
-        request.error = getReplyErrorObject(err);
-        //
-        agent.send(request);
-        return;
-    }
-    if (!message) message = {};
+  //   console.log('_reply=',request)
+  var agent = this;
+  var backend = agent.backend;
+  if (err) {
+    //获取应答错误对象
+    request.error = getReplyErrorObject(err);
+    //
+    agent.send(request);
+    return;
+  }
+  if (!message) message = {};
 
-    message.a = request.a;
-    if (request.id) {
-        message.id = request.id;
-    } else {
-        if (request.c) {
-            message.c = request.c;
-        }
-        if (request.d) {
-            message.d = request.d;
-        }
-        if (request.b && !message.data) {
-            message.b = request.b;
-        }
+  message.a = request.a;
+  if (request.id) {
+    message.id = request.id;
+  } else {
+    if (request.c) {
+      message.c = request.c;
     }
-    // 去除 op 操作
-    var middlewareContext = { request: request, reply: message };
-    backend.trigger(
-        backend.MIDDLEWARE_ACTIONS.reply,
-        agent,
-        middlewareContext,
-        function (err) {
-            if (err) {
-                request.error = getReplyErrorObject(err);
-                agent.send(request);
-            } else {
-                console.log(
-                    'middlewareContext.reply====',
-                    middlewareContext.reply
-                );
-                agent.send(middlewareContext.reply);
-            }
-        }
-    );
+    if (request.d) {
+      message.d = request.d;
+    }
+    if (request.b && !message.data) {
+      message.b = request.b;
+    }
+  }
+  // 去除 op 操作
+  var middlewareContext = { request: request, reply: message };
+  backend.trigger(
+    backend.MIDDLEWARE_ACTIONS.reply,
+    agent,
+    middlewareContext,
+    function (err) {
+      if (err) {
+        request.error = getReplyErrorObject(err);
+        agent.send(request);
+      } else {
+        // console.log(
+        //     'middlewareContext.reply====',
+        //     middlewareContext.reply
+        // );
+        agent.send(middlewareContext.reply);
+      }
+    }
+  );
 };
 
 // Start processing events from the stream //从流开始处理事件
 Agent.prototype._open = function () {
-    if (this.closed) return;
-    this.backend.agentsCount++;
-    if (!this.stream.isServer) this.backend.remoteAgentsCount++;
+  if (this.closed) return;
+  this.backend.agentsCount++;
+  if (!this.stream.isServer) this.backend.remoteAgentsCount++;
 
-    var agent = this;
-    // 获取webscoket数据 接受 服务器 socket中的send
-    this.stream.on('data', function (chunk) {
-        console.log('获取webscoket数据');
-        console.log('chunk======', chunk);
-        if (agent.closed) return;
+  var agent = this;
+  // 获取客户端 webscoket 发送过来数据数据 接受 服务器 客户端 socket中的发送的send数据
+  this.stream.on("data", function (chunk) {
+    // console.log('获取webscoket数据');
+    // console.log('chunk======', chunk);
+    if (agent.closed) return;
 
-        if (typeof chunk !== 'object') {
-            var err = new ShareDBError(
-                ERROR_CODE.ERR_MESSAGE_BADLY_FORMED,
-                'Received non-object message'
-            );
-            return agent.close(err);
+    if (typeof chunk !== "object") {
+      var err = new ShareDBError(
+        ERROR_CODE.ERR_MESSAGE_BADLY_FORMED,
+        "Received non-object message"
+      );
+      return agent.close(err);
+    }
+
+    var request = { data: chunk };
+    // 中间件
+    agent.backend.trigger(
+      agent.backend.MIDDLEWARE_ACTIONS.receive,
+      agent,
+      request,
+      // 直接执行到这
+      function (err) {
+        // 回调函数
+        var callback = function (err, message) {
+          //发送消息给自己客户端
+          // console.log('发送消息给自己客户端=',request.data)
+          agent._reply(request.data, err, message);
+        };
+        if (err) {
+          return callback(err);
         }
+        // 有消息
+        agent._handleMessage(request.data, callback);
+      }
+    );
+  });
 
-        var request = { data: chunk };
-        // 中间件
-        agent.backend.trigger(
-            agent.backend.MIDDLEWARE_ACTIONS.receive,
-            agent,
-            request,
-            // 直接执行到这
-            function (err) {
-                // 回调函数
-                var callback = function (err, message) {
-                    
-                    //发送消息给自己客户端
-                    console.log('发送消息给自己客户端=',request.data)
-                    agent._reply(request.data, err, message);
-                };
-                if (err) {
-                    return callback(err);
-                }
-                // 有消息
-                agent._handleMessage(request.data, callback);
-            }
-        );
-    });
-
-    var cleanup = agent._cleanup.bind(agent);
-    this.stream.on('end', cleanup);
-    this.stream.on('close', cleanup);
+  var cleanup = agent._cleanup.bind(agent);
+  this.stream.on("end", cleanup);
+  this.stream.on("close", cleanup);
 };
 
 // Check a request to see if its valid. Returns an error if there's a problem.  检查请求是否有效。 如果有问题，返回一个错误。
 Agent.prototype._checkRequest = function (request) {
-    if (request.a === 'qf' || request.a === 'qs' || request.a === 'qu') {
-        // Query messages need an ID property. 查询消息需要一个ID属性。
-        if (typeof request.id !== 'number') return 'Missing query ID';
-    } else if (
-        request.a === 'op' ||
-        request.a === 'f' ||
-        request.a === 's' ||
-        request.a === 'u' ||
-        request.a === 'p'
-    ) {
-        // Doc-based request.
-        if (request.c != null && typeof request.c !== 'string')
-            return 'Invalid collection';
-        if (request.d != null && typeof request.d !== 'string')
-            return 'Invalid id';
+  if (request.a === "qf" || request.a === "qs" || request.a === "qu") {
+    // Query messages need an ID property. 查询消息需要一个ID属性。
+    if (typeof request.id !== "number") return "Missing query ID";
+  } else if (
+    request.a === "op" ||
+    request.a === "f" ||
+    request.a === "s" ||
+    request.a === "u" ||
+    request.a === "p"
+  ) {
+    // Doc-based request.
+    if (request.c != null && typeof request.c !== "string")
+      return "Invalid collection";
+    if (request.d != null && typeof request.d !== "string") return "Invalid id";
 
-        if (request.a === 'op' || request.a === 'p') {
-            if (
-                request.v != null &&
-                (typeof request.v !== 'number' || request.v < 0)
-            )
-                return 'Invalid version';
-        }
-
-        if (request.a === 'p') {
-            if (typeof request.id !== 'string') return 'Missing presence ID';
-        }
-    } else if (request.a === 'bf' || request.a === 'bs' || request.a === 'bu') {
-        // Bulk request
-        if (request.c != null && typeof request.c !== 'string')
-            return 'Invalid collection';
-        if (typeof request.b !== 'object') return 'Invalid bulk subscribe data';
+    if (request.a === "op" || request.a === "p") {
+      if (request.v != null && (typeof request.v !== "number" || request.v < 0))
+        return "Invalid version";
     }
+
+    if (request.a === "p") {
+      if (typeof request.id !== "string") return "Missing presence ID";
+    }
+  } else if (request.a === "bf" || request.a === "bs" || request.a === "bu") {
+    // Bulk request
+    if (request.c != null && typeof request.c !== "string")
+      return "Invalid collection";
+    if (typeof request.b !== "object") return "Invalid bulk subscribe data";
+  }
 };
 
 // Handle an incoming message from the client //处理来自客户端的传入消息
 Agent.prototype._handleMessage = function (request, callback) {
-    try {
-        // 检查请求是否有效。 如果有问题，返回一个错误。
-        var errMessage = this._checkRequest(request);
-        if (errMessage)
-            return callback(
-                new ShareDBError(
-                    ERROR_CODE.ERR_MESSAGE_BADLY_FORMED,
-                    errMessage
-                )
-            );
-        console.log('request.a=====', request.a);
-        switch (request.a) {
-            // 初始化
-            case 'hs':
-                if (request.id) {
-                    this.src = request.id;
-                }
-                debugger
-                return callback(null, this._initMessage('hs'));
-            case 'qf':
-                return this._queryFetch(
-                    request.id,
-                    request.c,
-                    request.q,
-                    getQueryOptions(request),
-                    callback
-                );
-            case 'qs':
-                return this._querySubscribe(
-                    request.id,
-                    request.c,
-                    request.q,
-                    getQueryOptions(request),
-                    callback
-                );
-            case 'qu':
-                return this._queryUnsubscribe(request.id, callback);
-            case 'bf':
-                return this._fetchBulk(request.c, request.b, callback);
-            case 'bs':
-                return this._subscribeBulk(request.c, request.b, callback);
-            case 'bu':
-                return this._unsubscribeBulk(request.c, request.b, callback);
-            case 'f':
-                return this._fetch(request.c, request.d, request.v, callback);
-            case 's':
-                //客户端初始化
-                console.log('客户端初始化 request=', request);
-                return this._subscribe(
-                    request.c, // 文档集合key
-                    request.d, // 文档id
-                    request.v, // 文档版本
-                    callback
-                );
-            case 'u':
-                return this._unsubscribe(request.c, request.d, callback);
-            case 'op': // op 操作类
-                // Normalize the properties submitted 获取到编辑的op
-                var op = createClientOp(request, this._src());
-                if (op.seq >= util.MAX_SAFE_INTEGER) {
-                    return callback(
-                        new ShareDBError(
-                            ERROR_CODE.ERR_CONNECTION_SEQ_INTEGER_OVERFLOW,
-                            'Connection seq has exceeded the max safe integer, maybe from being open for too long'
-                        )
-                    );
-                }
-                if (!op) {
-                    return callback(
-                        new ShareDBError(
-                            ERROR_CODE.ERR_MESSAGE_BADLY_FORMED,
-                            'Invalid op message'
-                        )
-                    );
-                }
-                // 提交
-                console.log('this._submit========');
-                console.log('request=======', request);
-                console.log('op=======', op);
-                console.log('callback=======', callback);
-                      //　发送给其他客户端
-                return this._submit(
-                  request.c, 
-                  request.d, op,
-                   callback // 发送给当前socket
-                  );
-
-            case 'nf':
-                return this._fetchSnapshot(
-                    request.c,
-                    request.d,
-                    request.v,
-                    callback
-                );
-            case 'nt':
-                return this._fetchSnapshotByTimestamp(
-                    request.c,
-                    request.d,
-                    request.ts,
-                    callback
-                );
-            case 'p':
-                if (!this.backend.presenceEnabled) return;
-                var presence = this._createPresence(request);
-                if (
-                    presence.t &&
-                    !util.supportsPresence(types.map[presence.t])
-                ) {
-                    return callback({
-                        code: ERROR_CODE.ERR_TYPE_DOES_NOT_SUPPORT_PRESENCE,
-                        message:
-                            'Type does not support presence: ' + presence.t,
-                    });
-                }
-                return this._broadcastPresence(presence, callback);
-            case 'ps':
-                if (!this.backend.presenceEnabled) return;
-                return this._subscribePresence(
-                    request.ch,
-                    request.seq,
-                    callback
-                );
-            case 'pu':
-                return this._unsubscribePresence(
-                    request.ch,
-                    request.seq,
-                    callback
-                );
-            default:
-                callback(
-                    new ShareDBError(
-                        ERROR_CODE.ERR_MESSAGE_BADLY_FORMED,
-                        'Invalid or unknown message'
-                    )
-                );
+  try {
+    // 检查请求是否有效。 如果有问题，返回一个错误。
+    var errMessage = this._checkRequest(request);
+    if (errMessage)
+      return callback(
+        new ShareDBError(ERROR_CODE.ERR_MESSAGE_BADLY_FORMED, errMessage)
+      );
+    console.log("request.a=====", request.a);
+    switch (request.a) {
+      // 初始化
+      case "hs":
+        if (request.id) {
+          this.src = request.id;
         }
-    } catch (err) {
-        callback(err);
+        debugger;
+        return callback(null, this._initMessage("hs"));
+      case "qf":
+        return this._queryFetch(
+          request.id,
+          request.c,
+          request.q,
+          getQueryOptions(request),
+          callback
+        );
+      case "qs":
+        return this._querySubscribe(
+          request.id,
+          request.c,
+          request.q,
+          getQueryOptions(request),
+          callback
+        );
+      case "qu":
+        return this._queryUnsubscribe(request.id, callback);
+      case "bf":
+        return this._fetchBulk(request.c, request.b, callback);
+      case "bs":
+        return this._subscribeBulk(request.c, request.b, callback);
+      case "bu":
+        return this._unsubscribeBulk(request.c, request.b, callback);
+      case "f":
+        return this._fetch(request.c, request.d, request.v, callback);
+      case "s":
+        // console.log()
+        //客户端初始化
+        // console.log('客户端初始化 request=', request);
+        return this._subscribe(
+          request.c, // 文档集合key
+          request.d, // 文档id
+          request.v, // 文档版本
+          callback
+        );
+      case "u":
+        return this._unsubscribe(request.c, request.d, callback);
+      case "op": // op 操作类
+        // Normalize the properties submitted 获取到编辑的op
+        var op = createClientOp(request, this._src());
+        if (op.seq >= util.MAX_SAFE_INTEGER) {
+          return callback(
+            new ShareDBError(
+              ERROR_CODE.ERR_CONNECTION_SEQ_INTEGER_OVERFLOW,
+              "Connection seq has exceeded the max safe integer, maybe from being open for too long"
+            )
+          );
+        }
+        if (!op) {
+          return callback(
+            new ShareDBError(
+              ERROR_CODE.ERR_MESSAGE_BADLY_FORMED,
+              "Invalid op message"
+            )
+          );
+        }
+        // 提交
+        // console.log('this._submit========');
+        // console.log('request=======', request);
+        // console.log('op=======', op);
+        // console.log('callback=======', callback);
+        //　发送给其他客户端
+        return this._submit(
+          request.c,
+          request.d,
+          op,
+          callback // 发送给当前socket
+        );
+
+      case "nf":
+        return this._fetchSnapshot(request.c, request.d, request.v, callback);
+      case "nt":
+        return this._fetchSnapshotByTimestamp(
+          request.c,
+          request.d,
+          request.ts,
+          callback
+        );
+      case "p":
+        if (!this.backend.presenceEnabled) return;
+        var presence = this._createPresence(request);
+        if (presence.t && !util.supportsPresence(types.map[presence.t])) {
+          return callback({
+            code: ERROR_CODE.ERR_TYPE_DOES_NOT_SUPPORT_PRESENCE,
+            message: "Type does not support presence: " + presence.t,
+          });
+        }
+        return this._broadcastPresence(presence, callback);
+      case "ps":
+        if (!this.backend.presenceEnabled) return;
+        return this._subscribePresence(request.ch, request.seq, callback);
+      case "pu":
+        return this._unsubscribePresence(request.ch, request.seq, callback);
+      default:
+        callback(
+          new ShareDBError(
+            ERROR_CODE.ERR_MESSAGE_BADLY_FORMED,
+            "Invalid or unknown message"
+          )
+        );
     }
+  } catch (err) {
+    callback(err);
+  }
 };
 function getQueryOptions(request) {
-    var results = request.r;
-    var ids;
-    var fetch;
-    var fetchOps;
-    if (results) {
-        ids = [];
-        for (var i = 0; i < results.length; i++) {
-            var result = results[i];
-            var id = result[0];
-            var version = result[1];
-            ids.push(id);
-            if (version == null) {
-                if (fetch) {
-                    fetch.push(id);
-                } else {
-                    fetch = [id];
-                }
-            } else {
-                if (!fetchOps) fetchOps = {};
-                fetchOps[id] = version;
-            }
+  var results = request.r;
+  var ids;
+  var fetch;
+  var fetchOps;
+  if (results) {
+    ids = [];
+    for (var i = 0; i < results.length; i++) {
+      var result = results[i];
+      var id = result[0];
+      var version = result[1];
+      ids.push(id);
+      if (version == null) {
+        if (fetch) {
+          fetch.push(id);
+        } else {
+          fetch = [id];
         }
+      } else {
+        if (!fetchOps) fetchOps = {};
+        fetchOps[id] = version;
+      }
     }
-    var options = request.o || {};
-    options.ids = ids;
-    options.fetch = fetch;
-    options.fetchOps = fetchOps;
-    return options;
+  }
+  var options = request.o || {};
+  options.ids = ids;
+  options.fetch = fetch;
+  options.fetchOps = fetchOps;
+  return options;
 }
 
 Agent.prototype._queryFetch = function (
-    queryId,
+  queryId,
+  collection,
+  query,
+  options,
+  callback
+) {
+  // Fetch the results of a query once
+  this.backend.queryFetch(
+    this,
     collection,
     query,
     options,
-    callback
-) {
-    // Fetch the results of a query once
-    this.backend.queryFetch(
-        this,
-        collection,
-        query,
-        options,
-        function (err, results, extra) {
-            if (err) return callback(err);
-            var message = {
-                data: getResultsData(results),
-                extra: extra,
-            };
-            callback(null, message);
-        }
-    );
+    function (err, results, extra) {
+      if (err) return callback(err);
+      var message = {
+        data: getResultsData(results),
+        extra: extra,
+      };
+      callback(null, message);
+    }
+  );
 };
 
 Agent.prototype._querySubscribe = function (
-    queryId,
+  queryId,
+  collection,
+  query,
+  options,
+  callback
+) {
+  // Subscribe to a query. The client is sent the query results and its
+  // notified whenever there's a change
+  var agent = this;
+  var wait = 1;
+  var message;
+  function finish(err) {
+    if (err) return callback(err);
+    if (--wait) return;
+    callback(null, message);
+  }
+  if (options.fetch) {
+    wait++;
+    this.backend.fetchBulk(
+      this,
+      collection,
+      options.fetch,
+      function (err, snapshotMap) {
+        if (err) return finish(err);
+        message = getMapResult(snapshotMap);
+        finish();
+      }
+    );
+  }
+  if (options.fetchOps) {
+    wait++;
+    this._fetchBulkOps(collection, options.fetchOps, finish);
+  }
+  this.backend.querySubscribe(
+    this,
     collection,
     query,
     options,
-    callback
-) {
-    // Subscribe to a query. The client is sent the query results and its
-    // notified whenever there's a change
-    var agent = this;
-    var wait = 1;
-    var message;
-    function finish(err) {
-        if (err) return callback(err);
-        if (--wait) return;
-        callback(null, message);
-    }
-    if (options.fetch) {
-        wait++;
-        this.backend.fetchBulk(
-            this,
-            collection,
-            options.fetch,
-            function (err, snapshotMap) {
-                if (err) return finish(err);
-                message = getMapResult(snapshotMap);
-                finish();
-            }
-        );
-    }
-    if (options.fetchOps) {
-        wait++;
-        this._fetchBulkOps(collection, options.fetchOps, finish);
-    }
-    this.backend.querySubscribe(
-        this,
-        collection,
-        query,
-        options,
-        function (err, emitter, results, extra) {
-            if (err) return finish(err);
-            if (this.closed) return emitter.destroy();
+    function (err, emitter, results, extra) {
+      if (err) return finish(err);
+      if (this.closed) return emitter.destroy();
 
-            agent._subscribeToQuery(emitter, queryId, collection, query);
-            // No results are returned when ids are passed in as an option. Instead,
-            // want to re-poll the entire query once we've established listeners to
-            // emit any diff in results
-            if (!results) {
-                emitter.queryPoll(finish);
-                return;
-            }
-            message = {
-                data: getResultsData(results),
-                extra: extra,
-            };
-            finish();
-        }
-    );
+      agent._subscribeToQuery(emitter, queryId, collection, query);
+      // No results are returned when ids are passed in as an option. Instead,
+      // want to re-poll the entire query once we've established listeners to
+      // emit any diff in results
+      if (!results) {
+        emitter.queryPoll(finish);
+        return;
+      }
+      message = {
+        data: getResultsData(results),
+        extra: extra,
+      };
+      finish();
+    }
+  );
 };
 
 function getResultsData(results) {
-    var items = [];
-    for (var i = 0; i < results.length; i++) {
-        var result = results[i];
-        var item = getSnapshotData(result);
-        item.d = result.id;
-        items.push(item);
-    }
-    return items;
+  var items = [];
+  for (var i = 0; i < results.length; i++) {
+    var result = results[i];
+    var item = getSnapshotData(result);
+    item.d = result.id;
+    items.push(item);
+  }
+  return items;
 }
 
 function getMapResult(snapshotMap) {
-    var data = {};
-    for (var id in snapshotMap) {
-        var mapValue = snapshotMap[id];
-        // fetchBulk / subscribeBulk map data can have either a Snapshot or an object
-        // `{error: Error | string}` as a value.
-        if (mapValue.error) {
-            // Transform errors to serialization-friendly objects.
-            data[id] = { error: getReplyErrorObject(mapValue.error) };
-        } else {
-            data[id] = getSnapshotData(mapValue);
-        }
+  var data = {};
+  for (var id in snapshotMap) {
+    var mapValue = snapshotMap[id];
+    // fetchBulk / subscribeBulk map data can have either a Snapshot or an object
+    // `{error: Error | string}` as a value.
+    if (mapValue.error) {
+      // Transform errors to serialization-friendly objects.
+      data[id] = { error: getReplyErrorObject(mapValue.error) };
+    } else {
+      data[id] = getSnapshotData(mapValue);
     }
-    return { data: data };
+  }
+  return { data: data };
 }
 
 function getSnapshotData(snapshot) {
-    var data = {
-        v: snapshot.v,
-        data: snapshot.data,
-    };
-    if (types.defaultType !== types.map[snapshot.type]) {
-        data.type = snapshot.type;
-    }
-    return data;
+  var data = {
+    v: snapshot.v,
+    data: snapshot.data,
+  };
+  if (types.defaultType !== types.map[snapshot.type]) {
+    data.type = snapshot.type;
+  }
+  return data;
 }
 
 Agent.prototype._queryUnsubscribe = function (queryId, callback) {
-    var emitter = this.subscribedQueries[queryId];
-    if (emitter) {
-        emitter.destroy();
-        delete this.subscribedQueries[queryId];
-    }
-    util.nextTick(callback);
+  var emitter = this.subscribedQueries[queryId];
+  if (emitter) {
+    emitter.destroy();
+    delete this.subscribedQueries[queryId];
+  }
+  util.nextTick(callback);
 };
 
 Agent.prototype._fetch = function (collection, id, version, callback) {
-    if (version == null) {
-        // Fetch a snapshot
-        this.backend.fetch(this, collection, id, function (err, snapshot) {
-            if (err) return callback(err);
-            callback(null, { data: getSnapshotData(snapshot) });
-        });
-    } else {
-        // It says fetch on the tin, but if a version is specified the client
-        // actually wants me to fetch some ops
-        this._fetchOps(collection, id, version, callback);
-    }
+  if (version == null) {
+    // Fetch a snapshot
+    this.backend.fetch(this, collection, id, function (err, snapshot) {
+      if (err) return callback(err);
+      callback(null, { data: getSnapshotData(snapshot) });
+    });
+  } else {
+    // It says fetch on the tin, but if a version is specified the client
+    // actually wants me to fetch some ops
+    this._fetchOps(collection, id, version, callback);
+  }
 };
 
 Agent.prototype._fetchOps = function (collection, id, version, callback) {
-    var agent = this;
-    this.backend.getOps(
-        this,
-        collection,
-        id,
-        version,
-        null,
-        function (err, ops) {
-            if (err) return callback(err);
-            agent._sendOps(collection, id, ops);
-            callback();
-        }
-    );
+  var agent = this;
+  this.backend.getOps(this, collection, id, version, null, function (err, ops) {
+    if (err) return callback(err);
+    agent._sendOps(collection, id, ops);
+    callback();
+  });
 };
 
 Agent.prototype._fetchBulk = function (collection, versions, callback) {
-    if (Array.isArray(versions)) {
-        this.backend.fetchBulk(
-            this,
-            collection,
-            versions,
-            function (err, snapshotMap) {
-                if (err) {
-                    return callback(err);
-                }
-                if (snapshotMap) {
-                    var result = getMapResult(snapshotMap);
-                    callback(null, result);
-                } else {
-                    callback();
-                }
-            }
-        );
-    } else {
-        this._fetchBulkOps(collection, versions, callback);
-    }
+  if (Array.isArray(versions)) {
+    this.backend.fetchBulk(
+      this,
+      collection,
+      versions,
+      function (err, snapshotMap) {
+        if (err) {
+          return callback(err);
+        }
+        if (snapshotMap) {
+          var result = getMapResult(snapshotMap);
+          callback(null, result);
+        } else {
+          callback();
+        }
+      }
+    );
+  } else {
+    this._fetchBulkOps(collection, versions, callback);
+  }
 };
 
 Agent.prototype._fetchBulkOps = function (collection, versions, callback) {
-    var agent = this;
-    this.backend.getOpsBulk(
-        this,
-        collection,
-        versions,
-        null,
-        function (err, opsMap) {
-            if (err) return callback(err);
-            agent._sendOpsBulk(collection, opsMap);
-            callback();
-        }
-    );
+  var agent = this;
+  this.backend.getOpsBulk(
+    this,
+    collection,
+    versions,
+    null,
+    function (err, opsMap) {
+      if (err) return callback(err);
+      agent._sendOpsBulk(collection, opsMap);
+      callback();
+    }
+  );
 };
 
 Agent.prototype._subscribe = function (
-    collection, // 文档集合key
-    id, // 文档id
-    version, // 文档版本
-    callback // 回调函数
+  collection, // 文档集合key
+  id, // 文档id
+  version, // 文档版本
+  callback // 回调函数
 ) {
-    // If the version is specified, catch the client up by sending all ops
-    // since the specified version
-    //如果指定了版本号，则通过发送所有的ops来捕获客户端
-    //自指定版本
-    var agent = this;
-    // 捕获其他客户端
-    this.backend.subscribe(
-        this,
-        collection,
-        id,
-        version,
-        function (err, stream, snapshot, ops) {
-            if (err) return callback(err);
-            // If we're subscribing from a known version, send any ops committed since
-            // the requested version to bring the client's doc up to date
-            //如果我们订阅的是一个已知的版本，发送自那以后提交的所有操作
-            //更新客户文档的版本
-            if (ops) {
-                agent._sendOps(collection, id, ops);
-            }
-            // In addition, ops may already be queued on the stream by pubsub.
-            // Subscribe is called before the ops or snapshot are fetched, so it is
-            // possible that some ops may be duplicates. Clients should ignore any
-            // duplicate ops they may receive. This will flush ops already queued and
-            // subscribe to ongoing ops from the stream
-            //另外，ops可能已经被pubsub在流中排队了。
-            //在获取ops或快照之前调用Subscribe，所以它是
-            //某些操作可能是重复的。 客户应忽略任何
-            //它们可能收到的重复操作。 这将刷新已排队和
-            //从流订阅正在进行的操作
-            console.log('_subscribeToStream1');
-            agent._subscribeToStream(collection, id, stream);
-            // Snapshot is returned only when subscribing from a null version.
-            // Otherwise, ops will have been pushed into the stream
-        
-            if (snapshot) {
-              console.log('getSnapshotData(snapshot)=',getSnapshotData(snapshot))
-               // 返回
-                callback(null, { data: getSnapshotData(snapshot) });
-            } else {
-                callback();
-            }
-        }
-    );
+  // If the version is specified, catch the client up by sending all ops
+  // since the specified version
+  //如果指定了版本号，则通过发送所有的ops来捕获客户端
+  //自指定版本
+  var agent = this;
+  // 捕获其他客户端
+  this.backend.subscribe(
+    this,
+    collection,
+    id,
+    version,
+    function (err, stream, snapshot, ops) {
+      if (err) return callback(err);
+      // If we're subscribing from a known version, send any ops committed since
+      // the requested version to bring the client's doc up to date
+      //如果我们订阅的是一个已知的版本，发送自那以后提交的所有操作
+      //更新客户文档的版本
+      if (ops) {
+        agent._sendOps(collection, id, ops);
+      }
+      // In addition, ops may already be queued on the stream by pubsub.
+      // Subscribe is called before the ops or snapshot are fetched, so it is
+      // possible that some ops may be duplicates. Clients should ignore any
+      // duplicate ops they may receive. This will flush ops already queued and
+      // subscribe to ongoing ops from the stream
+      //另外，ops可能已经被pubsub在流中排队了。
+      //在获取ops或快照之前调用Subscribe，所以它是
+      //某些操作可能是重复的。 客户应忽略任何
+      //它们可能收到的重复操作。 这将刷新已排队和
+      //从流订阅正在进行的操作
+      // console.log('_subscribeToStream1');
+      agent._subscribeToStream(collection, id, stream);
+      // Snapshot is returned only when subscribing from a null version.
+      // Otherwise, ops will have been pushed into the stream
+
+      if (snapshot) {
+        //   console.log('getSnapshotData(snapshot)=',getSnapshotData(snapshot))
+        // 返回
+        callback(null, { data: getSnapshotData(snapshot) });
+      } else {
+        callback();
+      }
+    }
+  );
 };
 
 Agent.prototype._subscribeBulk = function (collection, versions, callback) {
-    // See _subscribe() above. This function's logic should match but in bulk
-    var agent = this;
-    this.backend.subscribeBulk(
-        this,
-        collection,
-        versions,
-        function (err, streams, snapshotMap, opsMap) {
-            if (err) {
-                return callback(err);
-            }
-            if (opsMap) {
-                agent._sendOpsBulk(collection, opsMap);
-            }
-            console.log('_subscribeToStream2');
-            for (var id in streams) {
-                agent._subscribeToStream(collection, id, streams[id]);
-            }
-            if (snapshotMap) {
-                var result = getMapResult(snapshotMap);
-                callback(null, result);
-            } else {
-                callback();
-            }
-        }
-    );
+  // See _subscribe() above. This function's logic should match but in bulk
+  var agent = this;
+  this.backend.subscribeBulk(
+    this,
+    collection,
+    versions,
+    function (err, streams, snapshotMap, opsMap) {
+      if (err) {
+        return callback(err);
+      }
+      if (opsMap) {
+        agent._sendOpsBulk(collection, opsMap);
+      }
+      // console.log('_subscribeToStream2');
+      for (var id in streams) {
+        agent._subscribeToStream(collection, id, streams[id]);
+      }
+      if (snapshotMap) {
+        var result = getMapResult(snapshotMap);
+        callback(null, result);
+      } else {
+        callback();
+      }
+    }
+  );
 };
 
 Agent.prototype._unsubscribe = function (collection, id, callback) {
-    // Unsubscribe from the specified document. This cancels the active
-    // stream or an inflight subscribing state
-    var docs = this.subscribedDocs[collection];
-    var stream = docs && docs[id];
-    if (stream) stream.destroy();
-    util.nextTick(callback);
+  // Unsubscribe from the specified document. This cancels the active
+  // stream or an inflight subscribing state
+  var docs = this.subscribedDocs[collection];
+  var stream = docs && docs[id];
+  if (stream) stream.destroy();
+  util.nextTick(callback);
 };
 
 Agent.prototype._unsubscribeBulk = function (collection, ids, callback) {
-    var docs = this.subscribedDocs[collection];
-    if (!docs) return util.nextTick(callback);
-    for (var i = 0; i < ids.length; i++) {
-        var id = ids[i];
-        var stream = docs[id];
-        if (stream) stream.destroy();
-    }
-    util.nextTick(callback);
+  var docs = this.subscribedDocs[collection];
+  if (!docs) return util.nextTick(callback);
+  for (var i = 0; i < ids.length; i++) {
+    var id = ids[i];
+    var stream = docs[id];
+    if (stream) stream.destroy();
+  }
+  util.nextTick(callback);
 };
 
 // 发送op给客户端
 Agent.prototype._submit = function (collection, id, op, callback) {
-    var agent = this;
-    //
-    console.log('this.backend.submit = ', op);
-    // 发送给其他客户端
-    this.backend.submit(this, collection, id, op, null, function (err, ops) {
-        // Message to acknowledge the op was successfully submitted //确认op成功提交消息
-        var ack = { src: op.src, seq: op.seq, v: op.v };
-        if (err) {
-            // Occasional 'Op already submitted' errors are expected to happen as
-            // part of normal operation, since inflight ops need to be resent after
-            // disconnect. In this case, ack the op so the client can proceed
-            //偶发的'Op already submitted'错误预计会发生
-            //正常操作的一部分，因为飞行操作后需要重新发送
-            //断开连接。 在这种情况下，ack操作以便客户端可以继续
-            if (err.code === ERROR_CODE.ERR_OP_ALREADY_SUBMITTED) {
-                return callback(null, ack);
-            }
-            return callback(err);
-        }
+  var agent = this;
+  //
+  // console.log('this.backend.submit = ', op);
+  // 发送给其他客户端
+  this.backend.submit(this, collection, id, op, null, function (err, ops) {
+    // Message to acknowledge the op was successfully submitted //确认op成功提交消息
+    var ack = { src: op.src, seq: op.seq, v: op.v };
+    if (err) {
+      // Occasional 'Op already submitted' errors are expected to happen as
+      // part of normal operation, since inflight ops need to be resent after
+      // disconnect. In this case, ack the op so the client can proceed
+      //偶发的'Op already submitted'错误预计会发生
+      //正常操作的一部分，因为飞行操作后需要重新发送
+      //断开连接。 在这种情况下，ack操作以便客户端可以继续
+      if (err.code === ERROR_CODE.ERR_OP_ALREADY_SUBMITTED) {
+        return callback(null, ack);
+      }
+      return callback(err);
+    }
 
-        // Reply with any operations that the client is missing.
-        // 用客户端丢失的任何操作进行回复。
-        console.log(' agent._sendOps=========');
-        console.log('collection========', collection);
-        console.log('id========', id);
-        console.log('ops=======', ops);
+    // Reply with any operations that the client is missing.
+    // 用客户端丢失的任何操作进行回复。
+    // console.log(' agent._sendOps=========');
+    // console.log('collection========', collection);
+    // console.log('id========', id);
+    // console.log('ops=======', ops);
 
-        agent._sendOps(collection, id, ops);
-        callback(null, ack);
-    });
+    agent._sendOps(collection, id, ops);
+    callback(null, ack);
+  });
 };
 
 Agent.prototype._fetchSnapshot = function (collection, id, version, callback) {
-    this.backend.fetchSnapshot(this, collection, id, version, callback);
+  this.backend.fetchSnapshot(this, collection, id, version, callback);
 };
 
 Agent.prototype._fetchSnapshotByTimestamp = function (
+  collection,
+  id,
+  timestamp,
+  callback
+) {
+  this.backend.fetchSnapshotByTimestamp(
+    this,
     collection,
     id,
     timestamp,
     callback
-) {
-    this.backend.fetchSnapshotByTimestamp(
-        this,
-        collection,
-        id,
-        timestamp,
-        callback
-    );
+  );
 };
 
 //发送一个初始化 给客户端
 Agent.prototype._initMessage = function (action) {
-    debugger
-    return {
-        a: action,
-        protocol: 1,
-        protocolMinor: 1,
-        id: this._src(),
-        type: types.defaultType.uri,
-    };
+  return {
+    a: action,
+    protocol: 1,
+    protocolMinor: 1,
+    id: this._src(),
+    type: types.defaultType.uri,
+  };
 };
 
 Agent.prototype._src = function () {
-    return this.src || this.clientId;
+  return this.src || this.clientId;
 };
 
-  //发布数据给 stream.on('data',()=>{}) 订阅数据监听
+//发布数据给 stream.on('data',()=>{}) 订阅数据监听
 Agent.prototype._broadcastPresence = function (presence, callback) {
-    var agent = this;
-    var backend = this.backend;
-    var requests =
-        this.presenceRequests[presence.ch] ||
-        (this.presenceRequests[presence.ch] = {});
-    var previousRequest = requests[presence.id];
-    if (!previousRequest || previousRequest.pv < presence.pv) {
-        this.presenceRequests[presence.ch][presence.id] = presence;
-    }
-    var context = {
-        presence: presence,
-        collection: presence.c,
-    };
-    backend.trigger(
-        backend.MIDDLEWARE_ACTIONS.receivePresence,
-        this,
-        context,
-        function (error) {
+  var agent = this;
+  var backend = this.backend;
+  var requests =
+    this.presenceRequests[presence.ch] ||
+    (this.presenceRequests[presence.ch] = {});
+  var previousRequest = requests[presence.id];
+  if (!previousRequest || previousRequest.pv < presence.pv) {
+    this.presenceRequests[presence.ch][presence.id] = presence;
+  }
+  var context = {
+    presence: presence,
+    collection: presence.c,
+  };
+  backend.trigger(
+    backend.MIDDLEWARE_ACTIONS.receivePresence,
+    this,
+    context,
+    function (error) {
+      if (error) return callback(error);
+      backend.transformPresenceToLatestVersion(
+        agent,
+        presence,
+        function (error, presence) {
+          if (error) return callback(error);
+          var channel = agent._getPresenceChannel(presence.ch);
+          //发布数据给 stream.on('data',()=>{}) 订阅数据监听
+          agent.backend.pubsub.publish([channel], presence, function (error) {
             if (error) return callback(error);
-            backend.transformPresenceToLatestVersion(
-                agent,
-                presence,
-                function (error, presence) {
-                    if (error) return callback(error);
-                    var channel = agent._getPresenceChannel(presence.ch);
-                    //发布数据给 stream.on('data',()=>{}) 订阅数据监听
-                    agent.backend.pubsub.publish(
-                        [channel],
-                        presence,
-                        function (error) {
-                            if (error) return callback(error);
-                            callback(null, presence);
-                        }
-                    );
-                }
-            );
+            callback(null, presence);
+          });
         }
-    );
+      );
+    }
+  );
 };
 
 Agent.prototype._createPresence = function (request) {
-    return {
-        a: 'p',
-        ch: request.ch,
-        src: this._src(),
-        id: request.id, // Presence ID, not Doc ID (which is 'd')
-        p: request.p,
-        pv: request.pv,
-        // The c,d,v,t fields are only set for DocPresence
-        c: request.c,
-        d: request.d,
-        v: request.v,
-        t: request.t,
-    };
+  return {
+    a: "p",
+    ch: request.ch,
+    src: this._src(),
+    id: request.id, // Presence ID, not Doc ID (which is 'd')
+    p: request.p,
+    pv: request.pv,
+    // The c,d,v,t fields are only set for DocPresence
+    c: request.c,
+    d: request.d,
+    v: request.v,
+    t: request.t,
+  };
 };
 
 Agent.prototype._subscribePresence = function (channel, seq, callback) {
-    var agent = this;
-    var presenceChannel = this._getPresenceChannel(channel);
-    this.backend.pubsub.subscribe(presenceChannel, function (error, stream) {
-        if (error) return callback(error);
-        if (seq < agent.presenceSubscriptionSeq[channel]) {
-            stream.destroy();
-            return callback(null, { ch: channel, seq: seq });
-        }
-        agent.presenceSubscriptionSeq[channel] = seq;
-        agent.subscribedPresences[channel] = stream;
-        agent._subscribeToPresenceStream(channel, stream);
-        agent._requestPresence(channel, function (error) {
-            callback(error, { ch: channel, seq: seq });
-        });
+  var agent = this;
+  var presenceChannel = this._getPresenceChannel(channel);
+  this.backend.pubsub.subscribe(presenceChannel, function (error, stream) {
+    if (error) return callback(error);
+    if (seq < agent.presenceSubscriptionSeq[channel]) {
+      stream.destroy();
+      return callback(null, { ch: channel, seq: seq });
+    }
+    agent.presenceSubscriptionSeq[channel] = seq;
+    agent.subscribedPresences[channel] = stream;
+    agent._subscribeToPresenceStream(channel, stream);
+    agent._requestPresence(channel, function (error) {
+      callback(error, { ch: channel, seq: seq });
     });
+  });
 };
 
 Agent.prototype._unsubscribePresence = function (channel, seq, callback) {
-    if (seq < this.presenceSubscriptionSeq[channel]) return;
-    this.presenceSubscriptionSeq[channel] = seq;
-    var stream = this.subscribedPresences[channel];
-    if (stream) stream.destroy();
-    callback(null, { ch: channel, seq: seq });
+  if (seq < this.presenceSubscriptionSeq[channel]) return;
+  this.presenceSubscriptionSeq[channel] = seq;
+  var stream = this.subscribedPresences[channel];
+  if (stream) stream.destroy();
+  callback(null, { ch: channel, seq: seq });
 };
 
 Agent.prototype._getPresenceChannel = function (channel) {
-    return '$presence.' + channel;
+  return "$presence." + channel;
 };
 
-  //发布数据给 stream.on('data',()=>{}) 订阅数据监听
+//发布数据给 stream.on('data',()=>{}) 订阅数据监听
 Agent.prototype._requestPresence = function (channel, callback) {
-    var presenceChannel = this._getPresenceChannel(channel);
-    //发布数据给 stream.on('data',()=>{}) 订阅数据监听
-    this.backend.pubsub.publish(
-        [presenceChannel],
-        { ch: channel, r: true, src: this.clientId },
-        callback
-    );
+  var presenceChannel = this._getPresenceChannel(channel);
+  //发布数据给 stream.on('data',()=>{}) 订阅数据监听
+  this.backend.pubsub.publish(
+    [presenceChannel],
+    { ch: channel, r: true, src: this.clientId },
+    callback
+  );
 };
 
 Agent.prototype._handlePresenceData = function (presence) {
-    if (presence.src === this._src()) return;
+  if (presence.src === this._src()) return;
 
-    if (presence.r) return this.send({ a: 'pr', ch: presence.ch });
+  if (presence.r) return this.send({ a: "pr", ch: presence.ch });
 
-    var backend = this.backend;
-    var context = {
-        collection: presence.c,
-        presence: presence,
-    };
-    var agent = this;
-    backend.trigger(
-        backend.MIDDLEWARE_ACTIONS.sendPresence,
-        this,
-        context,
-        function (error) {
-            if (error) {
-                if (backend.doNotForwardSendPresenceErrorsToClient)
-                    backend.errorHandler(error, { agent: agent });
-                else
-                    agent.send({
-                        a: 'p',
-                        ch: presence.ch,
-                        id: presence.id,
-                        error: getReplyErrorObject(error),
-                    });
-                return;
-            }
-            agent.send(presence);
-        }
-    );
+  var backend = this.backend;
+  var context = {
+    collection: presence.c,
+    presence: presence,
+  };
+  var agent = this;
+  backend.trigger(
+    backend.MIDDLEWARE_ACTIONS.sendPresence,
+    this,
+    context,
+    function (error) {
+      if (error) {
+        if (backend.doNotForwardSendPresenceErrorsToClient)
+          backend.errorHandler(error, { agent: agent });
+        else
+          agent.send({
+            a: "p",
+            ch: presence.ch,
+            id: presence.id,
+            error: getReplyErrorObject(error),
+          });
+        return;
+      }
+      agent.send(presence);
+    }
+  );
 };
 
 function createClientOp(request, clientId) {
-    console.log('request=', request);
-    // src can be provided if it is not the same as the current agent,
-    // such as a resubmission after a reconnect, but it usually isn't needed
-    //如果与当前代理不同，可以提供SRC，
-    //例如重新连接后重新提交，但通常不需要
-    var src = request.src || clientId;
-    // c, d, and m arguments are intentionally undefined. These are set later
-    // c、d和m参数是有意未定义的。 这些是稍后设置的
-    // return ('op' in request) ? new EditOp(src, request.seq, request.v, request.op, request.x) :
-    //   (request.create) ? new CreateOp(src, request.seq, request.v, request.create, request.x) :
-    //     (request.del) ? new DeleteOp(src, request.seq, request.v, request.del, request.x) :
-    //       undefined;
-    if ('op' in request) {
-        return new EditOp(src, request.seq, request.v, request.op, request.x);
-    } else if (request.create) {
-        return new CreateOp(
-            src,
-            request.seq,
-            request.v,
-            request.create,
-            request.x
-        );
-    } else if (request.del) {
-        return new DeleteOp(
-            src,
-            request.seq,
-            request.v,
-            request.del,
-            request.x
-        );
-    } else {
-        return undefined;
-    }
+  // console.log('request=', request);
+  // src can be provided if it is not the same as the current agent,
+  // such as a resubmission after a reconnect, but it usually isn't needed
+  //如果与当前代理不同，可以提供SRC，
+  //例如重新连接后重新提交，但通常不需要
+  var src = request.src || clientId;
+  // c, d, and m arguments are intentionally undefined. These are set later
+  // c、d和m参数是有意未定义的。 这些是稍后设置的
+  // return ('op' in request) ? new EditOp(src, request.seq, request.v, request.op, request.x) :
+  //   (request.create) ? new CreateOp(src, request.seq, request.v, request.create, request.x) :
+  //     (request.del) ? new DeleteOp(src, request.seq, request.v, request.del, request.x) :
+  //       undefined;
+  if ("op" in request) {
+    return new EditOp(src, request.seq, request.v, request.op, request.x);
+  } else if (request.create) {
+    return new CreateOp(src, request.seq, request.v, request.create, request.x);
+  } else if (request.del) {
+    return new DeleteOp(src, request.seq, request.v, request.del, request.x);
+  } else {
+    return undefined;
+  }
 }
 
 function shallowCopy(object) {
-    var out = {};
-    for (var key in object) {
-        out[key] = object[key];
-    }
-    return out;
+  var out = {};
+  for (var key in object) {
+    out[key] = object[key];
+  }
+  return out;
 }
 
 function CreateOp(src, seq, v, create, x, c, d, m) {
-    this.src = src;
-    this.seq = seq;
-    this.v = v;
-    this.create = create;
-    this.c = c;
-    this.d = d;
-    this.m = m;
-    this.x = x;
+  this.src = src;
+  this.seq = seq;
+  this.v = v;
+  this.create = create;
+  this.c = c;
+  this.d = d;
+  this.m = m;
+  this.x = x;
 }
 function EditOp(src, seq, v, op, x, c, d, m) {
-    this.src = src;
-    this.seq = seq;
-    this.v = v;
-    this.op = op;
-    this.c = c;
-    this.d = d;
-    this.m = m;
-    this.x = x;
+  this.src = src;
+  this.seq = seq;
+  this.v = v;
+  this.op = op;
+  this.c = c;
+  this.d = d;
+  this.m = m;
+  this.x = x;
 }
 function DeleteOp(src, seq, v, del, x, c, d, m) {
-    this.src = src;
-    this.seq = seq;
-    this.v = v;
-    this.del = del;
-    this.c = c;
-    this.d = d;
-    this.m = m;
-    this.x = x;
+  this.src = src;
+  this.seq = seq;
+  this.v = v;
+  this.del = del;
+  this.c = c;
+  this.d = d;
+  this.m = m;
+  this.x = x;
 }
