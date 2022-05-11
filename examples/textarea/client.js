@@ -2,7 +2,7 @@
  * @Date: 2022-03-31 09:46:25
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-04-19 17:51:19
+ * @LastEditTime: 2022-04-21 14:08:23
  * @FilePath: /sharedb/examples/textarea/client.js
  * @Description:
  */
@@ -55,5 +55,5 @@ doc.subscribe(function (err) {
   //绑定 input 事件
   var binding = new StringBinding(element, doc, ["content"]);
   // 初始化
-   binding.setup();  
+  binding.setup();
 });

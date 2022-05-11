@@ -303,7 +303,7 @@ Agent.prototype._isOwnOp = function (collection, op) {
 
 // 发送信息给客户端
 Agent.prototype.send = function (message) {
-  console.log("Agent.prototype.send  message = ", message);
+//   console.log("Agent.prototype.send  message = ", message);
   // Quietly drop replies if the stream was closed
   if (this.closed) return;
   // 发消息给客户
@@ -507,14 +507,14 @@ Agent.prototype._handleMessage = function (request, callback) {
       return callback(
         new ShareDBError(ERROR_CODE.ERR_MESSAGE_BADLY_FORMED, errMessage)
       );
-    console.log("request.a=====", request.a);
+    // console.log("request.a=====", request.a);
     switch (request.a) {
       // 初始化
       case "hs":
         if (request.id) {
           this.src = request.id;
         }
-        debugger;
+        
         return callback(null, this._initMessage("hs"));
       case "qf":
         return this._queryFetch(
@@ -541,6 +541,7 @@ Agent.prototype._handleMessage = function (request, callback) {
       case "bu":
         return this._unsubscribeBulk(request.c, request.b, callback);
       case "f":
+          //
         return this._fetch(request.c, request.d, request.v, callback);
       case "s":
         // console.log()
@@ -764,6 +765,7 @@ function getMapResult(snapshotMap) {
   return { data: data };
 }
 
+// 获取快照文档数据
 function getSnapshotData(snapshot) {
   var data = {
     v: snapshot.v,
@@ -784,11 +786,13 @@ Agent.prototype._queryUnsubscribe = function (queryId, callback) {
   util.nextTick(callback);
 };
 
+// 获取快照文档数据
 Agent.prototype._fetch = function (collection, id, version, callback) {
   if (version == null) {
     // Fetch a snapshot
     this.backend.fetch(this, collection, id, function (err, snapshot) {
       if (err) return callback(err);
+      // 获取快照
       callback(null, { data: getSnapshotData(snapshot) });
     });
   } else {
@@ -1154,11 +1158,11 @@ function createClientOp(request, clientId) {
   //   (request.create) ? new CreateOp(src, request.seq, request.v, request.create, request.x) :
   //     (request.del) ? new DeleteOp(src, request.seq, request.v, request.del, request.x) :
   //       undefined;
-  if ("op" in request) {
+  if ("op" in request) { // 操作
     return new EditOp(src, request.seq, request.v, request.op, request.x);
-  } else if (request.create) {
+  } else if (request.create) { // 创建
     return new CreateOp(src, request.seq, request.v, request.create, request.x);
-  } else if (request.del) {
+  } else if (request.del) { // 删除
     return new DeleteOp(src, request.seq, request.v, request.del, request.x);
   } else {
     return undefined;

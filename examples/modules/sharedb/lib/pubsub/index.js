@@ -67,7 +67,7 @@ PubSub.prototype.subscribe = function(channel, callback) {
   if (this.prefix) {
     channel = this.prefix + ' ' + channel;
   }
-  console.log('channel1=====================',channel)
+  // console.log('channel1=====================',channel)
   var pubsub = this;
   if (this.subscribed[channel]) {
     util.nextTick(function() {

@@ -451,8 +451,8 @@ Doc.prototype._handleOp = function (err, message) {
 //当(你猜对了!)连接状态改变时调用。这将
 //发生在我们断开和重新连接时。
 Doc.prototype._onConnectionStateChanged = function () {
-  console.log("this.connection.canSend====", this.connection.canSend);
-  debugger;
+  // console.log("this.connection.canSend====", this.connection.canSend);
+  // debugger;
 
   // 如果已经连上了
   if (this.connection.canSend) {
@@ -501,6 +501,7 @@ Doc.prototype._resubscribe = function () {
 // Request the current document snapshot or ops that bring us up to date
 Doc.prototype.fetch = function (callback) {
   if (this.connection.canSend) {
+    // console.log('sendFetch====')
     var isDuplicate = this.connection.sendFetch(this);
     pushActionCallback(this.inflightFetch, isDuplicate, callback);
     return;
@@ -509,7 +510,7 @@ Doc.prototype.fetch = function (callback) {
 };
 
 // Fetch the initial document and keep receiving updates
-//获取初始文档并保持接收更新
+//获取初始文档并保持接收更新 发送s
 Doc.prototype.subscribe = function (callback) {
   var wantSubscribe = true;
   //查找订阅
@@ -868,7 +869,7 @@ Doc.prototype._sendOp = function () {
 
     op.seq = this.connection.seq++;
   }
-  console.log("op========");
+  // console.log("op========");
   // 发送op给服务器
   this.connection.sendOp(this, op);
 

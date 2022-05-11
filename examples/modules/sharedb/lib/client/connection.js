@@ -164,6 +164,7 @@ Connection.prototype.bindToSocket = function (socket) {
 
     try {
       // 接收到服务器消息
+      console.log('接收到后台服务器消息:',request.data)
       connection.handleMessage(request.data);
     } catch (err) {
       util.nextTick(function () {
@@ -183,7 +184,7 @@ Connection.prototype.bindToSocket = function (socket) {
   socket.onopen = function () {
     // 设置状态
     connection._setState("connecting");
-    debugger;
+   
     connection._initializeHandshake();
   };
 
@@ -347,6 +348,9 @@ Connection.prototype._reset = function () {
 
 // Set the connection's state. The connection is basically a state machine. 设置连接的状态。连接基本上是一个状态机。
 Connection.prototype._setState = function (newState, reason) {
+  // console.log('this.state======',this.state)
+  // console.log('newState======',newState)
+ 
   if (this.state === newState) return;
 
   // I made a state diagram. The only invalid transitions are getting to
@@ -384,30 +388,30 @@ Connection.prototype._setState = function (newState, reason) {
     var query = this.queries[id];
     query._onConnectionStateChanged();
   }
-  console.log(" this.bulk =", this.bulk);
+  // console.log(" this.bulk =", this.bulk);
   // Emit the event to all documents 向所有文档发出事件
 
   for (var collection in this.collections) {
     var docs = this.collections[collection];
-    console.log("docs=", docs);
+    // console.log("docs=", docs);
     for (var id in docs) {
       docs[id]._onConnectionStateChanged();
     }
   }
-  console.log(" this.bulk =", this.bulk);
-  debugger;
+  // console.log(" this.bulk =", this.bulk);
+  // debugger;
   // Emit the event to all Presences //向所有存在发出事件
   for (var channel in this._presences) {
     this._presences[channel]._onConnectionStateChanged();
   }
-  console.log(" this.bulk =", this.bulk);
+  // console.log(" this.bulk =", this.bulk);
   // Emit the event to all snapshots //将事件发送到所有快照
   for (var id in this._snapshotRequests) {
     var snapshotRequest = this._snapshotRequests[id];
     snapshotRequest._onConnectionStateChanged();
   }
-  console.log(" this.bulk =", this.bulk);
-  debugger;
+  // console.log(" this.bulk =", this.bulk);
+  // debugger;
   this.endBulk();
 
   this.emit(newState, reason);
@@ -479,10 +483,10 @@ Connection.prototype._sendAction = function (
 
   // 把文档注入到this.collections对象中
   this._addDoc(doc);
-  console.log("this.bulk===========", this.bulk);
-  console.log("this.bulk===========", this.bulk);
-  debugger;
-
+  // console.log("this.bulk===========", this.bulk);
+  // console.log("this.bulk===========", this.bulk);
+  // debugger;
+  // console.log('this.bulk12======',this.bulk)
   if (this.bulk) {
     //批量订阅
     // Bulk subscribe  collection 文档集合key
@@ -528,13 +532,15 @@ Connection.prototype._sendAction = function (
     versions[doc.id] = version; //
     // console.log("version=", version); //
     // console.log("isDuplicate=", isDuplicate); //
-    console.log("this.bulk=", this.bulk);
-   
+    // console.log("this.bulk=", this.bulk);
+
     return isDuplicate; // false
   } else {
     // Send single doc subscribe message 发送单个文档订阅消息
+
     var message = { a: action, c: doc.collection, d: doc.id, v: version };
-    debugger;
+    console.log('message======',message)
+    // debugger;
     this.send(message);
   }
 };
@@ -560,8 +566,8 @@ Connection.prototype.sendUnsubscribe = function (doc) {
 
 // 发送op给服务器
 Connection.prototype.sendOp = function (doc, op) {
-  console.log("sendOp============");
-  debugger;
+  // console.log("sendOp============");
+  // debugger;
   // Ensure the doc is registered so that it receives the reply message
   // 把文档注入到this.collections对象中
   this._addDoc(doc);
@@ -590,16 +596,16 @@ Connection.prototype.sendOp = function (doc, op) {
   // console.log('message2=', message)
   // debugger
   // 发消息给服务器
-  debugger;
+  // debugger;
   this.send(message);
 };
 
 /**
- * Sends a message down the socket 向套接字发送消息
+ * Sends a message down the socket 发送消息给后台服务器
  */
 Connection.prototype.send = function (message) {
-  console.log("message=", message);
-  debugger;
+   console.log("发送消息给后台服务器=", message);
+  // debugger;
   if (this.debug) {
     logger.info("SEND", JSON.stringify(message));
   }
@@ -641,8 +647,8 @@ Connection.prototype.get = function (
     doc = docs[id] = new Doc(this, collection, id);
     this.emit("doc", doc);
   }
-  console.log("doc========", doc);
-  debugger;
+  // console.log("doc========", doc);
+  // debugger;
   return doc;
 };
 

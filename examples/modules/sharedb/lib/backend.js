@@ -795,10 +795,10 @@ Backend.prototype.subscribe = function (
         id: id,
         version: version,
     };
-    console.log(
-        ' backend.pubsub.subscribe=',
-        backend.pubsub.subscribe.toString()
-    );
+    // console.log(
+    //     ' backend.pubsub.subscribe=',
+    //     backend.pubsub.subscribe.toString()
+    // );
     //   pubsub._createStream 创建stream
     backend.pubsub.subscribe(channel, function (err, stream) {
         if (err) return callback(err);
