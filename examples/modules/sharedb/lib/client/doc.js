@@ -215,7 +215,7 @@ Doc.prototype._setType = function (newType) {
 };
 
 Doc.prototype._setData = function (data) {
-  console.log('data==========',data)
+  // console.log('data==========',data)
   this.data = data;
   this._dataStateVersion++;
 };
@@ -431,7 +431,7 @@ Doc.prototype._handleOp = function (err, message) {
 
   this.version++;
   try {
-    console.log('有op操作 _handleOp')
+    // console.log('有op操作 _handleOp')
     debugger
     this._otApply(message, false);
   } catch (error) {
@@ -443,7 +443,9 @@ Doc.prototype._handleOp = function (err, message) {
 // happen when we get disconnected & reconnect.
 Doc.prototype._onConnectionStateChanged = function () {
   if (this.connection.canSend) {
+    debugger
     this.flush();
+    debugger
     this._resubscribe();
   } else {
     if (this.inflightOp) {
@@ -466,6 +468,7 @@ Doc.prototype._onConnectionStateChanged = function () {
   }
 };
 
+// 监听依赖
 Doc.prototype._resubscribe = function () {
   if (!this.pendingSubscribe.length && this.wantSubscribe) {
     return this.subscribe();
@@ -473,17 +476,24 @@ Doc.prototype._resubscribe = function () {
   var willFetch = this.pendingSubscribe.some(function (request) {
     return request.wantSubscribe;
   });
-  if (!willFetch && this.pendingFetch.length) this.fetch();
+  //this.pendingFetch 长度存在
+  if (!willFetch && this.pendingFetch.length){
+    this.fetch();
+  } 
+  debugger
   this._flushSubscribe();
 };
 
 // Request the current document snapshot or ops that bring us up to date
 Doc.prototype.fetch = function (callback) {
   if (this.connection.canSend) {
+    debugger
     var isDuplicate = this.connection.sendFetch(this);
     pushActionCallback(this.inflightFetch, isDuplicate, callback);
     return;
   }
+  // 插入到一个队列中
+  debugger
   this.pendingFetch.push(callback);
 };
 
@@ -509,8 +519,8 @@ Doc.prototype._queueSubscribe = function (wantSubscribe, callback) {
     this.inflightSubscribe;
   var isDuplicateRequest =
     lastRequest && lastRequest.wantSubscribe === wantSubscribe;
-  console.log("lastRequest=", lastRequest);
-  console.log("isDuplicateRequest=", isDuplicateRequest);
+  // console.log("lastRequest=", lastRequest);
+  // console.log("isDuplicateRequest=", isDuplicateRequest);
   if (isDuplicateRequest) {
     lastRequest.callback = combineCallbacks([lastRequest.callback, callback]);
     return;
@@ -530,11 +540,12 @@ Doc.prototype._flushSubscribe = function () {
   if (this.connection.canSend) {
     this.inflightSubscribe = this.pendingSubscribe.shift();
     this.wantSubscribe = this.inflightSubscribe.wantSubscribe;
-    console.log("this.inflightSubscribe=", this.inflightSubscribe);
-    console.log("this.wantSubscribe=", this.wantSubscribe);
+    // console.log("this.inflightSubscribe=", this.inflightSubscribe);
+    // console.log("this.wantSubscribe=", this.wantSubscribe);
     if (this.wantSubscribe) {
       // 发送动作  // 把文档注入到this.collections对象中
       // 告诉服务器文档信息
+      debugger
       this.connection.sendSubscribe(this);
     } else {
       // Be conservative about our subscription state. We'll be unsubscribed
@@ -543,6 +554,7 @@ Doc.prototype._flushSubscribe = function () {
       //对我们的订阅状态保持保守。我们将没订阅
       //在发送请求和接收回调之间的一段时间，
       // 我们设自己为unsubscribed。
+      debugger
       this.subscribed = false;
       this.connection.sendUnsubscribe(this);
     }
@@ -737,9 +749,9 @@ Doc.prototype._otApply = function (op, source) {
           var transformErr = transformX(this.applyStack[j], componentOp);
           if (transformErr) return this._hardRollback(transformErr);
         }
-        console.log('this.data=========',this.data)
-        console.log('componentOp.op=========',componentOp.op)
-        console.log('this.type.apply(this.data, componentOp.op)=========',this.type.apply(this.data, componentOp.op))
+        // console.log('this.data=========',this.data)
+        // console.log('componentOp.op=========',componentOp.op)
+        // console.log('this.type.apply(this.data, componentOp.op)=========',this.type.apply(this.data, componentOp.op))
         debugger
         this._setData(this.type.apply(this.data, componentOp.op));
         
@@ -757,8 +769,8 @@ Doc.prototype._otApply = function (op, source) {
     
     this.emit("before op", op.op, source, op.src);
     // Apply the operation to the local data, mutating it in place
-    console.log('this.type.apply')
-    debugger
+    // console.log('this.type.apply')
+    // debugger
     this._setData(this.type.apply(this.data, op.op));
     // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with
@@ -889,7 +901,7 @@ Doc.prototype._submit = function (
     }
     // Try to normalize the op. This removes trailing skip:0's and things like that.
     // 调用type 方法
-    console.log("this.type=================", this.type);
+    // console.log("this.type=================", this.type);
     if (this.type.normalize) {
       op.op = this.type.normalize(op.op);
     }
@@ -901,8 +913,8 @@ Doc.prototype._submit = function (
       source, //source: StringBinding 实例对象
       callback // 回调函数
     );
-    console.log('提交 _submit')
-    debugger
+    // console.log('提交 _submit')
+    // debugger
     this._otApply(
       op, //op操作
       source //source: StringBinding 实例对象
@@ -927,7 +939,7 @@ Doc.prototype._pushOp = function (
   callback
 ) {
   op.source = source;
-  console.log("this.applyStack=", this.applyStack);
+  // console.log("this.applyStack=", this.applyStack);
 
   if (this.applyStack) {
     // If we are in the process of incrementally applying an operation, don't
@@ -954,7 +966,7 @@ Doc.prototype._pushOp = function (
   op.callbacks = [callback];
   // 插入到一个队列中
   this.pendingOps.push(op);
-  console.log("this.pendingOps=", this.pendingOps);
+  // console.log("this.pendingOps=", this.pendingOps);
   
 };
 
@@ -989,7 +1001,7 @@ Doc.prototype._popApplyStack = function (to) {
 //尝试将提交的操作组合到最后一个挂起的操作中
 //如果成功则为composed op，否则为undefined
 Doc.prototype._tryCompose = function (op) {
-  console.log("this.preventCompose=", this.preventCompose);
+  // console.log("this.preventCompose=", this.preventCompose);
   if (this.preventCompose) {
     return;
   }
@@ -999,8 +1011,8 @@ Doc.prototype._tryCompose = function (op) {
   //我们只能写入最后一个未完成的任务，而飞行任务已经完成
   //已经发送到服务器，所以我们不能修改它们
   var last = this.pendingOps[this.pendingOps.length - 1];
-  console.log("last============", last);
-  console.log("this.pendingOps=======", this.pendingOps);
+  // console.log("last============", last);
+  // console.log("this.pendingOps=======", this.pendingOps);
   if (!last || last.sentAt) {
     return;
   }
@@ -1009,7 +1021,7 @@ Doc.prototype._tryCompose = function (op) {
   // a matching source
   //如果提交的是op source，则只能组合具有
   //匹配源
-  console.log("this.submitSource=", this.submitSource);
+  // console.log("this.submitSource=", this.submitSource);
   if (this.submitSource && !deepEqual(op.source, last.source)) {
     return;
   }
@@ -1017,8 +1029,8 @@ Doc.prototype._tryCompose = function (op) {
   // Compose an op into a create by applying it. This effectively makes the op
   // invisible, as if the document were created including the op originally
   if (last.create && "op" in op) {
-    console.log('last.create')
-    debugger
+    // console.log('last.create')
+    // debugger
     last.create.data = this.type.apply(last.create.data, op.op);
     return last;
   }
@@ -1045,9 +1057,9 @@ Doc.prototype.submitOp = function (
   options, //    { source: StringBinding 实例对象 }
   callback
 ) {
-  console.log("component=", component);
-  console.log("options=", options);
-  console.log("callback=", callback);
+  // console.log("component=", component);
+  // console.log("options=", options);
+  // console.log("callback=", callback);
 
   if (typeof options === "function") {
     callback = options;

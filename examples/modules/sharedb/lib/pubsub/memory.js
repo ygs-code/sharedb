@@ -26,7 +26,7 @@ MemoryPubSub.prototype._unsubscribe = function(channel, callback) {
 };
 
 MemoryPubSub.prototype._publish = function(channels, data, callback) {
-  console.log('channels==========',channels)
+  // console.log('channels==========',channels)
   var pubsub = this;
   util.nextTick(function() {
     for (var i = 0; i < channels.length; i++) {

@@ -89,7 +89,7 @@ function Agent(
 
     // Send the legacy message to initialize old clients with the random agent Id
     //发送旧消息初始化旧客户端随机代理Id
-    console.log('init=================')
+    // console.log('init=================')
     this.send(this._initMessage('init'));
 }
 module.exports = Agent;
@@ -171,10 +171,10 @@ Agent.prototype._subscribeToStream = function (collection, id, stream) {
             return;
         }
 
-        console.log('_onOp2'); 
-        console.log('collection=', collection);
-        console.log('id=', id);
-        console.log('data=', data);
+        // console.log('_onOp2'); 
+        // console.log('collection=', collection);
+        // console.log('id=', id);
+        // console.log('data=', data);
         agent._onOp(collection, id, data);
     });
     stream.on('end', function () {
@@ -260,7 +260,7 @@ Agent.prototype._subscribeToQuery = function (
 
     emitter.onOp = function (op) {
         var id = op.d;
-        console.log('_onOp1');
+        // console.log('_onOp1');
         agent._onOp(collection, id, op);
     };
 
@@ -286,7 +286,7 @@ Agent.prototype._onOp = function (collection, id, op) {
     var agent = this;
     util.nextTick(function () {
         var copy = shallowCopy(op);
-        console.log('agent.backend.sanitizeOp=', agent.backend.sanitizeOp);
+        // console.log('agent.backend.sanitizeOp=', agent.backend.sanitizeOp);
         agent.backend.sanitizeOp(agent, collection, id, copy, function (err) {
             if (err) {
                 logger.error(
@@ -298,7 +298,7 @@ Agent.prototype._onOp = function (collection, id, op) {
                 );
                 return;
             }
-            console.log('agent._sendOp2=');
+            // console.log('agent._sendOp2=');
             agent._sendOp(collection, id, copy);
         });
     });
@@ -313,7 +313,7 @@ Agent.prototype._isOwnOp = function (collection, op) {
 
 // 发送信息给客户端
 Agent.prototype.send = function (message) {
-    console.log('Agent.prototype.send  message = ', message);
+    // console.log('Agent.prototype.send  message = ', message);
     // Quietly drop replies if the stream was closed
     if (this.closed) return;
     // 发消息给客户
@@ -339,16 +339,16 @@ Agent.prototype._sendOp = function (collection, id, op) {
     if (op.del) {
         message.del = true;
     }
-    console.log('_sendOp message=', message);
+    // console.log('_sendOp message=', message);
     // 给客户端发信息
     this.send(message);
 };
 
 // 发送op给客户端
 Agent.prototype._sendOps = function (collection, id, ops) {
-    console.log('Agent.prototype._sendOps=', ops);
+    // console.log('Agent.prototype._sendOps=', ops);
     for (var i = 0; i < ops.length; i++) {
-        console.log('this._sendOp1');
+        // console.log('this._sendOp1');
         this._sendOp(collection, id, ops[i]);
     }
 };
@@ -379,7 +379,7 @@ function getReplyErrorObject(err) {
 
 // 发送消息给自己客户端去除op操作
 Agent.prototype._reply = function (request, err, message) {
-  console.log('_reply=',request)
+//   console.log('_reply=',request)
     var agent = this;
     var backend = agent.backend;
     if (err) {
@@ -405,6 +405,7 @@ Agent.prototype._reply = function (request, err, message) {
             message.b = request.b;
         }
     }
+    // console.log('middlewareContext=====',message)
     // 去除 op 操作
     var middlewareContext = { request: request, reply: message };
     backend.trigger(
@@ -413,13 +414,14 @@ Agent.prototype._reply = function (request, err, message) {
         middlewareContext,
         function (err) {
             if (err) {
+
                 request.error = getReplyErrorObject(err);
                 agent.send(request);
             } else {
-                console.log(
-                    'middlewareContext.reply====',
-                    middlewareContext.reply
-                );
+                // console.log(
+                //     'middlewareContext.reply====',
+                //     middlewareContext.reply
+                // );
                 agent.send(middlewareContext.reply);
             }
         }
@@ -433,10 +435,10 @@ Agent.prototype._open = function () {
     if (!this.stream.isServer) this.backend.remoteAgentsCount++;
 
     var agent = this;
-    // 获取webscoket数据 接受 服务器 socket中的send
+    // 获取webscoket数据 接受 客户端 socket中的send
     this.stream.on('data', function (chunk) {
-        console.log('获取webscoket数据');
-        console.log('chunk======', chunk);
+        // console.log('获取webscoket数据');
+        // console.log('chunk======', chunk);
         if (agent.closed) return;
 
         if (typeof chunk !== 'object') {
@@ -459,7 +461,7 @@ Agent.prototype._open = function () {
                 var callback = function (err, message) {
                     
                     //发送消息给自己客户端
-                    console.log('发送消息给自己客户端=',request.data)
+                    // console.log('发送消息给自己客户端=',request.data)
                     agent._reply(request.data, err, message);
                 };
                 if (err) {
@@ -525,14 +527,14 @@ Agent.prototype._handleMessage = function (request, callback) {
                     errMessage
                 )
             );
-        console.log('request.a=====', request.a);
+        // console.log('request.a=====', request.a);
         switch (request.a) {
             // 初始化
             case 'hs':
                 if (request.id) {
                     this.src = request.id;
                 }
-                debugger
+                
                 return callback(null, this._initMessage('hs'));
             case 'qf':
                 return this._queryFetch(
@@ -562,7 +564,7 @@ Agent.prototype._handleMessage = function (request, callback) {
                 return this._fetch(request.c, request.d, request.v, callback);
             case 's':
                 //客户端初始化
-                console.log('客户端初始化 request=', request);
+                // console.log('客户端初始化 request=', request);
                 return this._subscribe(
                     request.c, // 文档集合key
                     request.d, // 文档id
@@ -591,10 +593,10 @@ Agent.prototype._handleMessage = function (request, callback) {
                     );
                 }
                 // 提交
-                console.log('this._submit========');
-                console.log('request=======', request);
-                console.log('op=======', op);
-                console.log('callback=======', callback);
+                // console.log('this._submit========');
+                // console.log('request=======', request);
+                // console.log('op=======', op);
+                // console.log('callback=======', callback);
                       //　发送给其他客户端
                 return this._submit(
                   request.c, 
@@ -921,13 +923,13 @@ Agent.prototype._subscribe = function (
             //某些操作可能是重复的。 客户应忽略任何
             //它们可能收到的重复操作。 这将刷新已排队和
             //从流订阅正在进行的操作
-            console.log('_subscribeToStream1');
+            // console.log('_subscribeToStream1');
             agent._subscribeToStream(collection, id, stream);
             // Snapshot is returned only when subscribing from a null version.
             // Otherwise, ops will have been pushed into the stream
         
             if (snapshot) {
-              console.log('getSnapshotData(snapshot)=',getSnapshotData(snapshot))
+            //   console.log('getSnapshotData(snapshot)=',getSnapshotData(snapshot))
                // 返回
                 callback(null, { data: getSnapshotData(snapshot) });
             } else {
@@ -951,7 +953,7 @@ Agent.prototype._subscribeBulk = function (collection, versions, callback) {
             if (opsMap) {
                 agent._sendOpsBulk(collection, opsMap);
             }
-            console.log('_subscribeToStream2');
+            // console.log('_subscribeToStream2');
             for (var id in streams) {
                 agent._subscribeToStream(collection, id, streams[id]);
             }
@@ -989,7 +991,7 @@ Agent.prototype._unsubscribeBulk = function (collection, ids, callback) {
 Agent.prototype._submit = function (collection, id, op, callback) {
     var agent = this;
     //
-    console.log('this.backend.submit = ', op);
+    // console.log('this.backend.submit = ', op);
     // 发送给其他客户端
     this.backend.submit(this, collection, id, op, null, function (err, ops) {
         // Message to acknowledge the op was successfully submitted //确认op成功提交消息
@@ -1009,10 +1011,10 @@ Agent.prototype._submit = function (collection, id, op, callback) {
 
         // Reply with any operations that the client is missing.
         // 用客户端丢失的任何操作进行回复。
-        console.log(' agent._sendOps=========');
-        console.log('collection========', collection);
-        console.log('id========', id);
-        console.log('ops=======', ops);
+        // console.log(' agent._sendOps=========');
+        // console.log('collection========', collection);
+        // console.log('id========', id);
+        // console.log('ops=======', ops);
 
         agent._sendOps(collection, id, ops);
         callback(null, ack);
@@ -1040,7 +1042,7 @@ Agent.prototype._fetchSnapshotByTimestamp = function (
 
 //发送一个初始化 给客户端
 Agent.prototype._initMessage = function (action) {
-    debugger
+    
     return {
         a: action,
         protocol: 1,
@@ -1187,7 +1189,7 @@ Agent.prototype._handlePresenceData = function (presence) {
 };
 
 function createClientOp(request, clientId) {
-    console.log('request=', request);
+    // console.log('request=', request);
     // src can be provided if it is not the same as the current agent,
     // such as a resubmission after a reconnect, but it usually isn't needed
     //如果与当前代理不同，可以提供SRC，

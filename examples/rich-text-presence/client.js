@@ -1,4 +1,4 @@
-var ReconnectingWebSocket = require('reconnecting-websocket');
+var ReconnectingWebSocket = require('reconnecting-websocket').default
 var sharedb = require('sharedb/lib/client');
 var richText = require('rich-text');
 var Quill = require('quill');

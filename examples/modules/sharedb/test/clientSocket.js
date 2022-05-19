@@ -10,7 +10,7 @@ var socket = new StreamSocket();
 
 // socket 已经连接上
 socket.onopen = function () {
-    console.log('onopen=')
+    // console.log('onopen=')
 };
 
 socket.onerror = function (err) {
@@ -22,7 +22,7 @@ socket.onclose = function (reason) {
 };
 // 获取服务端 socket消息
 socket.onmessage = function (event) {
-    console.log('event=',event)
+    // console.log('event=',event)
 };
 // 客户端推送给服务器
 socket.send(JSON.stringify({ name: "hello" }))
@@ -38,7 +38,7 @@ socket._open();
 socket.stream.write(JSON.stringify({ name: "你好" }))
 // 获取客户端 socket send 信息
 socket.stream.on('data',(...ags)=>{
-    console.log('data=',ags)
+    // console.log('data=',ags)
 })
 
 

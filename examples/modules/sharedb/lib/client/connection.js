@@ -144,8 +144,9 @@ Connection.prototype.bindToSocket = function (socket) {
   var connection = this;
   // 获取socket消息
   socket.onmessage = function (event) {
-    console.log("event=", event);
-    debugger
+    // console.log("event=", event);
+    // console.log("接受到服务器消息=", event);
+     
     try {
       var data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
@@ -163,6 +164,7 @@ Connection.prototype.bindToSocket = function (socket) {
     if (!request.data) return;
 
     try {
+       console.log("接受到服务器消息:", request.data);
       connection.handleMessage(request.data);
     } catch (err) {
       util.nextTick(function () {
@@ -174,7 +176,7 @@ Connection.prototype.bindToSocket = function (socket) {
   // If socket is already open, do handshake immediately. //如果socket已经打开，立即握手。
   // 如果socket已经打开，则先发一个 hs 给服务器
   if (socket.readyState === 1) {
-    debugger
+    
     connection._initializeHandshake();
   }
 
@@ -182,7 +184,7 @@ Connection.prototype.bindToSocket = function (socket) {
   socket.onopen = function () {
     // 设置状态
     connection._setState("connecting");
-    debugger
+    
     connection._initializeHandshake();
   };
 
@@ -217,8 +219,8 @@ Connection.prototype.bindToSocket = function (socket) {
  */
 // websocket 响应信息
 Connection.prototype.handleMessage = function (message) {
-  console.log("message1=", message);
-  debugger
+  // console.log("message1=", message);
+  
   var err = null;
   if (message.error) {
     err = wrapErrorData(message.error, message);
@@ -383,6 +385,8 @@ Connection.prototype._setState = function (newState, reason) {
     var query = this.queries[id];
     query._onConnectionStateChanged();
   }
+  console.log('this.bulk=',this.bulk)
+  debugger
   // Emit the event to all documents
   for (var collection in this.collections) {
     var docs = this.collections[collection];
@@ -390,15 +394,21 @@ Connection.prototype._setState = function (newState, reason) {
       docs[id]._onConnectionStateChanged();
     }
   }
+  console.log('this.bulk=',this.bulk)
+  debugger
   // Emit the event to all Presences
   for (var channel in this._presences) {
     this._presences[channel]._onConnectionStateChanged();
   }
+  console.log('this.bulk=',this.bulk)
+  debugger
   // Emit the event to all snapshots
   for (var id in this._snapshotRequests) {
     var snapshotRequest = this._snapshotRequests[id];
     snapshotRequest._onConnectionStateChanged();
   }
+  console.log('this.bulk=',this.bulk)
+  debugger
   this.endBulk();
 
   this.emit(newState, reason);
@@ -469,14 +479,14 @@ Connection.prototype._sendAction = function (
     //批量订阅
     // Bulk subscribe  collection 文档集合key
     var actions = this.bulk[doc.collection] || (this.bulk[doc.collection] = {});
-    console.log("actions=", actions);
-    console.log("doc.collection=", actions);
+    // console.log("actions=", actions);
+    // console.log("doc.collection=", actions);
 
     var versions = actions[action] || (actions[action] = {});
     var isDuplicate = versions.hasOwnProperty(doc.id);
     versions[doc.id] = version; // 空
-    console.log("version=", version); // 空
-    console.log("isDuplicate=", isDuplicate); // 空
+    // console.log("version=", version); // 空
+    // console.log("isDuplicate=", isDuplicate); // 空
     return isDuplicate; // false
   } else {
     // Send single doc subscribe message 发送单个文档订阅消息
@@ -486,6 +496,7 @@ Connection.prototype._sendAction = function (
 };
 
 Connection.prototype.sendFetch = function (doc) {
+  debugger
   return this._sendAction("f", doc, doc.version);
 };
 
@@ -530,8 +541,8 @@ Connection.prototype.sendOp = function (doc, op) {
   if (doc.submitSource) {
     message.x.source = op.source;
   }
-  console.log('message2=', message)
-  debugger
+  // console.log('message2=', message)
+  // 
   // 发消息给服务器 
   this.send(message);
 };
@@ -540,6 +551,7 @@ Connection.prototype.sendOp = function (doc, op) {
  * Sends a message down the socket 向套接字发送消息
  */
 Connection.prototype.send = function (message) {
+  console.log('发消息给后台服务器：',message)
   if (this.debug) {
     logger.info("SEND", JSON.stringify(message));
   }
@@ -835,7 +847,6 @@ Connection.prototype._handleLegacyInit = function (message) {
   //忽略响应。
   if (message.protocolMinor) {
     // 初始化告诉服务器 客户端已经连上
-    debugger
     return this._initializeHandshake();
   }
   // 设置已经连上状态
@@ -845,7 +856,7 @@ Connection.prototype._handleLegacyInit = function (message) {
 // 发送{ a: "hs", id: this.id }给服务器
 Connection.prototype._initializeHandshake = function () {
   // 发送 消息
-  debugger
+  
   this.send({ a: "hs", id: this.id });
 };
 

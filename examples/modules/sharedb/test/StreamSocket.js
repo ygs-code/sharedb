@@ -35,7 +35,7 @@ connect = function (connection, req, callback) {
     // }
 
     socket.onclose('open',()=>{
-        console.log('open===')
+        // console.log('open===')
     })
     socket._open();
 
@@ -69,7 +69,7 @@ var doc = connection.get("examples", "textarea");
   //
   doc.fetch(function (err) {
     if (err) throw err;
-    console.log('doc==========',doc)
+    // console.log('doc==========',doc)
     if (doc.type === null) {
       // 创建一个空的文档
       doc.create({ content: "" }, callback);

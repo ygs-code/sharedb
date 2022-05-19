@@ -1395,14 +1395,16 @@ Connection.prototype._setState = function (newState, reason) {
 
 
   this.startBulk(); // Emit the event to all queries
-
+  console.log('this.bulk=',this.bulk)
+  debugger
   for (var id in this.queries) {
     var query = this.queries[id];
 
     query._onConnectionStateChanged();
   } // Emit the event to all documents
 
-
+  console.log('this.bulk=',this.bulk)
+  debugger
   for (var collection in this.collections) {
     var docs = this.collections[collection];
 
@@ -1410,18 +1412,22 @@ Connection.prototype._setState = function (newState, reason) {
       docs[id]._onConnectionStateChanged();
     }
   } // Emit the event to all Presences
-
+  console.log('this.bulk=',this.bulk)
+  debugger
 
   for (var channel in this._presences) {
     this._presences[channel]._onConnectionStateChanged();
   } // Emit the event to all snapshots
-
+  console.log('this.bulk=',this.bulk)
+  debugger
 
   for (var id in this._snapshotRequests) {
     var snapshotRequest = this._snapshotRequests[id];
 
     snapshotRequest._onConnectionStateChanged();
   }
+  console.log('this.bulk=',this.bulk)
+  debugger
 
   this.endBulk();
   this.emit(newState, reason);

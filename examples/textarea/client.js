@@ -46,7 +46,7 @@ socket.addEventListener("error", function () {
 //创建本地文档实例映射到id为“textarea”的“examples”集合文档
 // 获取到文档对象
 var doc = connection.get("examples", "textarea");
-console.log("doc.subscribe=", doc.subscribe);
+// console.log("doc.subscribe=", doc.subscribe);
 // 获取到文档对象
 doc.subscribe(function (err) {
   if (err) {

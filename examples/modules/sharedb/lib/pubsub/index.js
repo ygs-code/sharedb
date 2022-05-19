@@ -67,7 +67,7 @@ PubSub.prototype.subscribe = function(channel, callback) {
   if (this.prefix) {
     channel = this.prefix + ' ' + channel;
   }
-  console.log('channel1=====================',channel)
+  // console.log('channel1=====================',channel)
   var pubsub = this;
   if (this.subscribed[channel]) {
     util.nextTick(function() {
@@ -92,7 +92,7 @@ PubSub.prototype.publish = function(channels, data, callback) {
       channels[i] = this.prefix + ' ' + channels[i];
     }
   }
-  console.log('channels=',channels)
+  // console.log('channels=',channels)
 
    //发布数据给 stream.on('data',()=>{}) 订阅数据监听
   this._publish(channels, data, callback);
@@ -101,7 +101,7 @@ PubSub.prototype.publish = function(channels, data, callback) {
 // 推送 socket 给所有人。
 PubSub.prototype._emit = function(channel, data) {
   var channelStreams = this.streams[channel];
-  console.log('channelStreams==========',channelStreams)
+  // console.log('channelStreams==========',channelStreams)
   if (channelStreams) {
     for (var id in channelStreams) {
       //发布数据给 stream.on('data',()=>{}) 订阅数据监听

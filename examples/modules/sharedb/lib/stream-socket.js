@@ -55,13 +55,14 @@ function ServerStream(socket) {
     socket.close('stopped');
   });
 }
+ 
 
 inherits(ServerStream, Duplex);
 
 ServerStream.prototype.isServer = true;
 
 ServerStream.prototype._read = (...ags)=>{
-  console.log('data========',ags)
+  // console.log('data========',ags)
 
 } // util.doNothing;
 
@@ -84,5 +85,5 @@ ServerStream.prototype._write = function(chunk, encoding, callback) {
 
 
 ServerStream.prototype._send= function(json, callback) {
-    console.log('json=',json)
+    // console.log('json=',json)
 }

@@ -53,13 +53,13 @@ function startServer() {
   // Connect any incoming WebSocket connection to ShareDB
   var wss = new WebSocket.Server({ server: server });
   wss.on("connection", function (ws) {
-    console.log('connection==========')
+    // console.log('connection==========')
     // 远程socket
     var stream = new WebSocketJSONStream(ws);
     // stream.write({
     //   name:'abc'
     // })
-   console.log('backend.listen1') 
+  //  console.log('backend.listen1') 
     backend.listen(stream);
   });
 
