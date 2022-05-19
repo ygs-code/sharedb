@@ -1,4 +1,4 @@
-var async = require('async');
+var async = require('../../../modules/async');
 var Agent = require('./agent');
 var Connection = require('./client/connection');
 var emitter = require('./emitter');
