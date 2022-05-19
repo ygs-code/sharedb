@@ -185,6 +185,7 @@ Backend.prototype.listen = function (
             if (err) {
                 return agent.close(err);
             }
+            // open连接
             agent._open();
         }
     );

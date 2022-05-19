@@ -1,3 +1,11 @@
+/*
+ * @Date: 2022-04-19 09:54:46
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-04-19 10:37:05
+ * @FilePath: /sharedb/examples/modules/sharedb/lib/pubsub/memory.js
+ * @Description: 
+ */
 var PubSub = require('./index');
 var util = require('../util');
 

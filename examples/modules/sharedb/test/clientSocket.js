@@ -1,3 +1,11 @@
+/*
+ * @Date: 2022-04-19 09:54:46
+ * @Author: Yao guan shou
+ * @LastEditors: Yao guan shou
+ * @LastEditTime: 2022-04-19 10:38:23
+ * @FilePath: /sharedb/examples/modules/sharedb/test/clientSocket.js
+ * @Description: 
+ */
 
 // 相当于订阅发布，不需要端口号啥的
 var StreamSocket = require("../lib/stream-socket");

@@ -697,7 +697,7 @@ var ReconnectingWebSocket = /** @class */ (function () {
 
     //触发 ReconnectingWebSocket 实例化 回调函数
     ReconnectingWebSocket.prototype._callEventListener = function (event, listener) {
-        console.log('event=', event)
+        // console.log('event=', event)
         // 如果是listener.handleEvent  执行回调方法 把 websocket 事件回调传进去
         if ('handleEvent' in listener) {
             // @ts-ignore

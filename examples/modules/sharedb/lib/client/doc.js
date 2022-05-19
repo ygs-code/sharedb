@@ -360,17 +360,24 @@ Doc.prototype._handleSubscribe = function (error, snapshot) {
   this.inflightSubscribe = null;
   var callbacks = this.pendingFetch;
   this.pendingFetch = [];
-  if (request.callback) callbacks.push(request.callback);
+  if (request.callback) {
+    callbacks.push(request.callback);
+  }
   var callback;
   if (callbacks.length) {
     callback = function (error) {
       util.callEach(callbacks, error);
     };
   }
-  if (error) return this._emitResponseError(error, callback);
+  if (error) {
+    return this._emitResponseError(error, callback);
+  }
   this.subscribed = request.wantSubscribe;
-  if (this.subscribed) this.ingestSnapshot(snapshot, callback);
-  else if (callback) callback();
+  if (this.subscribed) {
+    this.ingestSnapshot(snapshot, callback);
+  } else if (callback) {
+    callback();
+  }
   this._emitNothingPending();
   this._flushSubscribe();
 };
@@ -431,8 +438,8 @@ Doc.prototype._handleOp = function (err, message) {
 
   this.version++;
   try {
-    // console.log('有op操作 _handleOp')
-    debugger
+    console.log("有op操作 _handleOp");
+    debugger;
     this._otApply(message, false);
   } catch (error) {
     return this._hardRollback(error);
@@ -441,13 +448,21 @@ Doc.prototype._handleOp = function (err, message) {
 
 // Called whenever (you guessed it!) the connection state changes. This will
 // happen when we get disconnected & reconnect.
+//当(你猜对了!)连接状态改变时调用。这将
+//发生在我们断开和重新连接时。
 Doc.prototype._onConnectionStateChanged = function () {
+  // console.log("this.connection.canSend====", this.connection.canSend);
+  // debugger;
+
+  // 如果已经连上了
   if (this.connection.canSend) {
     debugger
     this.flush();
-    debugger
+    // 添加依赖
+    debugger;
     this._resubscribe();
   } else {
+    debugger
     if (this.inflightOp) {
       this.pendingOps.unshift(this.inflightOp);
       this.inflightOp = null;
@@ -471,15 +486,16 @@ Doc.prototype._onConnectionStateChanged = function () {
 // 监听依赖
 Doc.prototype._resubscribe = function () {
   if (!this.pendingSubscribe.length && this.wantSubscribe) {
+    debugger;
     return this.subscribe();
   }
   var willFetch = this.pendingSubscribe.some(function (request) {
     return request.wantSubscribe;
   });
-  //this.pendingFetch 长度存在
-  if (!willFetch && this.pendingFetch.length){
+  if (!willFetch && this.pendingFetch.length) {
+    debugger;
     this.fetch();
-  } 
+  }
   debugger
   this._flushSubscribe();
 };
@@ -487,7 +503,7 @@ Doc.prototype._resubscribe = function () {
 // Request the current document snapshot or ops that bring us up to date
 Doc.prototype.fetch = function (callback) {
   if (this.connection.canSend) {
-    debugger
+    // console.log('sendFetch====')
     var isDuplicate = this.connection.sendFetch(this);
     pushActionCallback(this.inflightFetch, isDuplicate, callback);
     return;
@@ -498,7 +514,7 @@ Doc.prototype.fetch = function (callback) {
 };
 
 // Fetch the initial document and keep receiving updates
-//获取初始文档并保持接收更新
+//获取初始文档并保持接收更新 发送s
 Doc.prototype.subscribe = function (callback) {
   var wantSubscribe = true;
   //查找订阅
@@ -529,6 +545,7 @@ Doc.prototype._queueSubscribe = function (wantSubscribe, callback) {
     wantSubscribe: !!wantSubscribe,
     callback: callback,
   });
+  debugger
   // 刷新订阅
   this._flushSubscribe();
 };
@@ -543,6 +560,7 @@ Doc.prototype._flushSubscribe = function () {
     // console.log("this.inflightSubscribe=", this.inflightSubscribe);
     // console.log("this.wantSubscribe=", this.wantSubscribe);
     if (this.wantSubscribe) {
+      debugger
       // 发送动作  // 把文档注入到this.collections对象中
       // 告诉服务器文档信息
       debugger
@@ -599,12 +617,17 @@ function combineCallbacks(callbacks) {
 //
 // Only one operation can be in-flight at a time. If an operation is already on
 // its way, or we're not currently connected, this method does nothing.
+//操作
+//如果可以，发送下一个挂起的操作到服务器。
+//每次只能执行一个操作。如果一个操作已经开始
+//它的方式，或者我们当前没有连接，这个方法什么都不做。
 Doc.prototype.flush = function () {
-  // Ignore if we can't send or we are already sending an op
+  // Ignore if we can't send or we are already sending an op //如果我们不能发送或者我们已经在发送一个操作，请忽略
   if (!this.connection.canSend || this.inflightOp) return;
-
-  // Send first pending op unless paused
+  debugger;
+  // Send first pending op unless paused //发送第一个挂起的操作，除非暂停
   if (!this.paused && this.pendingOps.length) {
+    debugger;
     this._sendOp();
   }
 };
@@ -701,7 +724,6 @@ Doc.prototype._otApply = function (op, source) {
     //注:如果我们需要添加另一个参数到这个事件，我们应该考虑
     // 'op'事件的第3个参数是op.src
     this.emit("before op batch", op.op, source);
-    
 
     // Iteratively apply multi-component remote operations and rollback ops
     // (source === false) for the default JSON0 OT type. It could use
@@ -752,9 +774,9 @@ Doc.prototype._otApply = function (op, source) {
         // console.log('this.data=========',this.data)
         // console.log('componentOp.op=========',componentOp.op)
         // console.log('this.type.apply(this.data, componentOp.op)=========',this.type.apply(this.data, componentOp.op))
-        debugger
+        // debugger
         this._setData(this.type.apply(this.data, componentOp.op));
-        
+
         //发布
         this.emit("op", componentOp.op, source, op.src);
       }
@@ -766,11 +788,11 @@ Doc.prototype._otApply = function (op, source) {
 
     // The 'before op' event enables clients to pull any necessary data out of
     // the snapshot before it gets changed
-    
+
     this.emit("before op", op.op, source, op.src);
     // Apply the operation to the local data, mutating it in place
-    // console.log('this.type.apply')
-    // debugger
+    console.log("this.type.apply");
+    debugger;
     this._setData(this.type.apply(this.data, op.op));
     // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with
@@ -778,9 +800,9 @@ Doc.prototype._otApply = function (op, source) {
     // For ops from other clients, this will be after the op has been
     // committed to the database and published
     this.emit("op", op.op, source, op.src);
-   
+
     this.emit("op batch", op.op, source);
-    
+
     return;
   }
 
@@ -853,7 +875,8 @@ Doc.prototype._sendOp = function () {
 
     op.seq = this.connection.seq++;
   }
-   // 发送op给服务器
+  // console.log("op========");
+  // 发送op给服务器
   this.connection.sendOp(this, op);
 
   // src isn't needed on the first try, since the server session will have the
@@ -954,7 +977,7 @@ Doc.prototype._pushOp = function (
     // end of the last pending operation.
     //如果该类型支持组合操作，则尝试将操作组合到
     //最后一个挂起的操作结束。
-    var composed = this._tryCompose(op); 
+    var composed = this._tryCompose(op);
 
     if (composed) {
       composed.callbacks.push(callback);
@@ -967,7 +990,6 @@ Doc.prototype._pushOp = function (
   // 插入到一个队列中
   this.pendingOps.push(op);
   // console.log("this.pendingOps=", this.pendingOps);
-  
 };
 
 Doc.prototype._popApplyStack = function (to) {
@@ -1029,8 +1051,8 @@ Doc.prototype._tryCompose = function (op) {
   // Compose an op into a create by applying it. This effectively makes the op
   // invisible, as if the document were created including the op originally
   if (last.create && "op" in op) {
-    // console.log('last.create')
-    // debugger
+    console.log("last.create");
+    debugger;
     last.create.data = this.type.apply(last.create.data, op.op);
     return last;
   }

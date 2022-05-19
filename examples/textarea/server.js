@@ -2,7 +2,7 @@
  * @Date: 2022-04-19 09:54:46
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-04-19 17:40:49
+ * @LastEditTime: 2022-04-20 11:54:32
  * @FilePath: /sharedb/examples/textarea/server.js
  * @Description: 
  */
@@ -26,12 +26,13 @@ backend.on('send',()=>{
 
 // Create initial document then fire callback
 function createDoc(callback) {
+    // 客户端
   // 获取 连接对象
   var connection = backend.connect();
   // 获取文档
   var doc = connection.get("examples", "textarea");
   // console.log('doc=========',doc)
-  //
+  // 客户端
   doc.fetch(function (err) {
     if (err) throw err;
     if (doc.type === null) {
@@ -39,6 +40,7 @@ function createDoc(callback) {
       doc.create({ content: "" }, callback);
       return;
     }
+    // 服务端
     callback();
   });
 }
