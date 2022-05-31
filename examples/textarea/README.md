@@ -96,7 +96,7 @@ Connection.prototype.bindToSocket = function (socket) {
   // 获取socket消息
   socket.onmessage = function (event) {
     console.log("event=", event);
-    debugger
+     
     try {
       var data =
         typeof event.data === "string" ? JSON.parse(event.data) : event.data;
@@ -134,7 +134,7 @@ Connection.prototype.bindToSocket = function (socket) {
   socket.onopen = function () {
     // 设置状态
     connection._setState("connecting");
-    debugger
+     
     connection._initializeHandshake();
   };
 

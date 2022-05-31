@@ -2,8 +2,8 @@
  * @Date: 2018-01-25 00:54:00
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-03-31 14:26:47
- * @FilePath: /sharedb-textarea-example/webpack.config.js
+ * @LastEditTime: 2022-05-31 13:02:16
+ * @FilePath: /sharedb/examples/rich-text/webpack.config.js
  * @Description:
  */
 
@@ -40,8 +40,7 @@ module.exports = {
         use: {
           loader: "babel-loader",
           options: {
-            presets: ["@babel/preset-env"],
-            plugins: ["@babel/plugin-transform-runtime"],
+    
           },
         },
       },
