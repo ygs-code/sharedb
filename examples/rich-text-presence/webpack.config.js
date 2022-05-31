@@ -2,7 +2,7 @@
  * @Date: 2018-01-25 00:54:00
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-05-31 13:02:08
+ * @LastEditTime: 2022-05-31 13:12:24
  * @FilePath: /sharedb/examples/rich-text-presence/webpack.config.js
  * @Description:
  */
@@ -23,7 +23,7 @@ module.exports = {
   devtool: "source-map", // 生产环境和开发环境判断
   mode: "development",
   entry: "./client.js",
-  watch: true,
+  // watch: true,
   module: {
     rules: [
       {
