@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "pm2 start  server.js  --watch",
     "dev": "node server.js",
-    "web:dev": "cross-env NODE_ENV=development   node  ./node_modules/webpack-clis-utils    webpackEnv=dev  target=web  "
+    "web:dev": "cross-env NODE_ENV=development    webpackEnv=dev  target=web webpack-cli-util"
   },
   "author": "Nate Smith",
   "contributors": [

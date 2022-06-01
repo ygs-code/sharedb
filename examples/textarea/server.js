@@ -2,7 +2,7 @@
  * @Date: 2022-04-19 09:54:46
  * @Author: Yao guan shou
  * @LastEditors: Yao guan shou
- * @LastEditTime: 2022-04-20 11:54:32
+ * @LastEditTime: 2022-06-01 17:54:59
  * @FilePath: /sharedb/examples/textarea/server.js
  * @Description: 
  */
@@ -65,8 +65,8 @@ function startServer() {
     backend.listen(stream);
   });
 
-  server.listen(8080);
-  console.log("Listening on http://localhost:8080");
+  server.listen(8099);
+  console.log("Listening on http://localhost:8099");
 }
 
 
