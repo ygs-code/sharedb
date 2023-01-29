@@ -11,7 +11,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "pm2 start  server.js  --watch",
     "dev": "node server.js",
-    "web:dev": "cross-env NODE_ENV=development    webpackEnv=dev  target=web webpack-cli-util"
+    "web:dev": "cross-env NODE_ENV=development    WEB_ENV=dev  target=web webpack-cli-util"
   },
   "author": "Nate Smith",
   "contributors": [
@@ -19,26 +19,20 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@babel/polyfill": "^7.12.1",
     "arraydiff": "^0.1.3",
-    "awesome-typescript-loader": "^5.2.1",
-    "babel-loader": "^8.2.5",
     "browserify": "^17.0.0",
-    "case-sensitive-paths-webpack-plugin": "^2.4.0",
+    "core-js": "^2.6.10",
+    "cross-env": "^7.0.3",
     "express": "^4.18.1",
     "fast-deep-equal": "^3.1.3",
-    "friendly-errors-webpack-plugin": "^1.7.0",
-    "happypack": "^5.0.1",
-    "node-loader": "^2.0.0",
     "ot-fuzzer": "^1.3.1",
     "reconnecting-websocket": "^4.4.0",
     "sharedb": "^3.0.0",
     "sharedb-string-binding": "^1.0.0",
-    "source-map-loader": "^3.0.1",
-    "webpack-clis-utils": "0.0.7",
-    "webpackbar": "^5.0.2",
+    "webpack-cli-util": "^0.3.5",
+    "wrap-ansi": "^8.0.1",
     "ws": "^8.7.0"
   },
-  "devDependencies": {
-    "core-js": "^2.6.10"
-  }
+  "devDependencies": {}
 }

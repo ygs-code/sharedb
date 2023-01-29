@@ -6,7 +6,7 @@ var WebSocketJSONStream = require('@teamwork/websocket-json-stream');
 var json1 = require('ot-json1');
 
 ShareDB.types.register(json1.type);
-var backend = new ShareDB();
+var backend = new ShareDB(); // 连接数据库
 createDoc(startServer);
 
 // Create initial document then fire callback

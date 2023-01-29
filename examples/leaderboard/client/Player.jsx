@@ -1,52 +1,56 @@
-var PropTypes = require('prop-types');
-var React = require('react');
-var classNames = require('classnames');
+import React from 'react';
+import PropTypes from 'prop-types';
+import classNames from 'classnames';
+// var PropTypes = require('prop-types');
+// var React = require('react');
+// var classNames = require('classnames');
 
 class Player extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleClick = this.handleClick.bind(this);
-  }
-
-  handleClick(event) {
-    this.props.onPlayerSelected(this.props.doc.id);
-  }
-
-  componentDidMount() {
-    var comp = this;
-    var doc = comp.props.doc;
-    doc.subscribe();
-    doc.on('load', update);
-    doc.on('op', update);
-    function update() {
-      // `comp.props.doc.data` is now updated. re-render component.
-      comp.forceUpdate();
+    constructor(props) {
+        super(props);
+        this.handleClick = this.handleClick.bind(this);
     }
-  }
 
-  componentWillUnmount() {
-    this.doc.unsubscribe();
-  }
+    handleClick(event) {
+        this.props.onPlayerSelected(this.props.doc.id);
+    }
 
-  render() {
-    var classes = {
-      'player': true,
-      'selected': this.props.selected
-    };
+    componentDidMount() {
+        var comp = this;
+        var doc = comp.props.doc;
+        doc.subscribe();
+        doc.on('load', update);
+        doc.on('op', update);
+        function update() {
+            // `comp.props.doc.data` is now updated. re-render component.
+            comp.forceUpdate();
+        }
+    }
 
-    return (
-      <li className={classNames(classes)} onClick={this.handleClick}>
-        <span className="name">{this.props.doc.data.name}</span>
-        <span className="score">{this.props.doc.data.score}</span>
-      </li>
-    );
-  }
+    componentWillUnmount() {
+        this.doc.unsubscribe();
+    }
+
+    render() {
+        var classes = {
+            player: true,
+            selected: this.props.selected,
+        };
+
+        return (
+            <li className={classNames(classes)} onClick={this.handleClick}>
+                <span className="name">{this.props.doc.data.name}</span>
+                <span className="score">{this.props.doc.data.score}</span>
+            </li>
+        );
+    }
 }
 
 Player.propTypes = {
-  doc: PropTypes.object.isRequired,
-  onPlayerSelected: PropTypes.func.isRequired,
-  selected: PropTypes.bool.isRequired
+    doc: PropTypes.object.isRequired,
+    onPlayerSelected: PropTypes.func.isRequired,
+    selected: PropTypes.bool.isRequired,
 };
 
-module.exports = Player;
+export default Player;
+// module.exports = Player;

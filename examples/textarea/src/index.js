@@ -59,3 +59,5 @@ doc.subscribe(function (err) {
   // 初始化
   binding.setup() 
 })
+
+ 

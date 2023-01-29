@@ -44,5 +44,5 @@ function startServer() {
   });
 
   server.listen(8089);
-  console.log('Listening on http://localhost:8080');
+  console.log('Listening on http://localhost:8089');
 }
