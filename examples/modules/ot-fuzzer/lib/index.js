@@ -15,18 +15,18 @@ const nestedObject = {};
 // nestedObject.b.inner = nestedObject.b;
 // nestedObject.b.obj = nestedObject;
 
-console.log(
-  "1.>",
-  JSON.stringify(
-    util.inspect(
-      {
-        colors: "abcd",
-        depth: "asdfsdf",
-      },
-      { colors: true, depth: null }
-    )
-  )
-);
+// console.log(
+//   "1.>",
+//   JSON.stringify(
+//     util.inspect(
+//       {
+//         colors: "abcd",
+//         depth: "asdfsdf",
+//       },
+//       { colors: true, depth: null }
+//     )
+//   )
+// );
 
 // var myrng =  seedrandom;
 // console.log(myrng());                // Always 0.9282578795792454
@@ -61,14 +61,14 @@ try {
   console.log(`restored from ${restorefile} iteration ${restorestate.iter}`);
 } catch (error) {}
 
-console.log("restorestate=", restorestate);
+// console.log("restorestate=", restorestate);
 
 // 产生随机数
 const randomReal = (exports.randomReal = seedrandom(seed, {
   state: restorestate.seedstate,
 }));
 
-console.log("randomReal=", randomReal());
+// console.log("randomReal=", randomReal());
 
 // Generate a random int 0 <= k < n
 //  产生随机数
@@ -81,11 +81,11 @@ const randWords = fs
   .readFileSync(__dirname + "/jabberwocky.txt")
   .toString()
   .split(/\W+/);
-console.log("randWords=", randWords);
+// console.log("randWords=", randWords);
 
 const randomWord = (exports.randomWord = () =>
   randWords[randomInt(randWords.length)]);
-console.log("randomWord=", randomWord());
+// console.log("randomWord=", randomWord());
 // Cross-transform function. Transform server by client and client by server. Returns
 // [server, client].
 // Cross-transform函数。按客户端转换服务器，按服务器转换客户机。返回

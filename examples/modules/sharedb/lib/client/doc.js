@@ -382,8 +382,9 @@ Doc.prototype._handleSubscribe = function (error, snapshot) {
   this._flushSubscribe();
 };
 
-//
+//op 操作 接受服务端 op
 Doc.prototype._handleOp = function (err, message) {
+  console.log('_handleOp message====',message)
   if (err) {
     if (this.inflightOp) {
       // The server has rejected submission of the current operation. If we get
@@ -406,6 +407,7 @@ Doc.prototype._handleOp = function (err, message) {
     return;
   }
 
+  // 如果消息版本大于当前版本
   if (this.version == null || message.v > this.version) {
     // This will happen in normal operation if we become subscribed to a
     // new document via a query. It can also happen if we get an op for
@@ -439,7 +441,6 @@ Doc.prototype._handleOp = function (err, message) {
   this.version++;
   try {
     console.log("有op操作 _handleOp");
-    debugger;
     this._otApply(message, false);
   } catch (error) {
     return this._hardRollback(error);
@@ -452,17 +453,14 @@ Doc.prototype._handleOp = function (err, message) {
 //发生在我们断开和重新连接时。
 Doc.prototype._onConnectionStateChanged = function () {
   // console.log("this.connection.canSend====", this.connection.canSend);
-  // debugger;
+  // ;
 
   // 如果已经连上了
   if (this.connection.canSend) {
-    debugger
     this.flush();
     // 添加依赖
-    debugger;
     this._resubscribe();
   } else {
-    debugger
     if (this.inflightOp) {
       this.pendingOps.unshift(this.inflightOp);
       this.inflightOp = null;
@@ -486,21 +484,20 @@ Doc.prototype._onConnectionStateChanged = function () {
 // 监听依赖
 Doc.prototype._resubscribe = function () {
   if (!this.pendingSubscribe.length && this.wantSubscribe) {
-    debugger;
     return this.subscribe();
   }
   var willFetch = this.pendingSubscribe.some(function (request) {
     return request.wantSubscribe;
   });
   if (!willFetch && this.pendingFetch.length) {
-    debugger;
     this.fetch();
   }
-  debugger
+
   this._flushSubscribe();
 };
 
 // Request the current document snapshot or ops that bring us up to date
+//请求当前文档快照或最新的操作
 Doc.prototype.fetch = function (callback) {
   if (this.connection.canSend) {
     // console.log('sendFetch====')
@@ -509,7 +506,7 @@ Doc.prototype.fetch = function (callback) {
     return;
   }
   // 插入到一个队列中
-  debugger
+
   this.pendingFetch.push(callback);
 };
 
@@ -545,7 +542,7 @@ Doc.prototype._queueSubscribe = function (wantSubscribe, callback) {
     wantSubscribe: !!wantSubscribe,
     callback: callback,
   });
-  debugger
+
   // 刷新订阅
   this._flushSubscribe();
 };
@@ -560,10 +557,9 @@ Doc.prototype._flushSubscribe = function () {
     // console.log("this.inflightSubscribe=", this.inflightSubscribe);
     // console.log("this.wantSubscribe=", this.wantSubscribe);
     if (this.wantSubscribe) {
-      debugger
       // 发送动作  // 把文档注入到this.collections对象中
       // 告诉服务器文档信息
-      debugger
+
       this.connection.sendSubscribe(this);
     } else {
       // Be conservative about our subscription state. We'll be unsubscribed
@@ -572,7 +568,7 @@ Doc.prototype._flushSubscribe = function () {
       //对我们的订阅状态保持保守。我们将没订阅
       //在发送请求和接收回调之间的一段时间，
       // 我们设自己为unsubscribed。
-      debugger
+
       this.subscribed = false;
       this.connection.sendUnsubscribe(this);
     }
@@ -624,10 +620,8 @@ function combineCallbacks(callbacks) {
 Doc.prototype.flush = function () {
   // Ignore if we can't send or we are already sending an op //如果我们不能发送或者我们已经在发送一个操作，请忽略
   if (!this.connection.canSend || this.inflightOp) return;
-  debugger;
   // Send first pending op unless paused //发送第一个挂起的操作，除非暂停
   if (!this.paused && this.pendingOps.length) {
-    debugger;
     this._sendOp();
   }
 };
@@ -774,7 +768,9 @@ Doc.prototype._otApply = function (op, source) {
         // console.log('this.data=========',this.data)
         // console.log('componentOp.op=========',componentOp.op)
         // console.log('this.type.apply(this.data, componentOp.op)=========',this.type.apply(this.data, componentOp.op))
-        // debugger
+        // ot 算法合并
+        console.log('this.data==',this.data)
+        console.log('componentOp.op==',componentOp.op)
         this._setData(this.type.apply(this.data, componentOp.op));
 
         //发布
@@ -792,7 +788,9 @@ Doc.prototype._otApply = function (op, source) {
     this.emit("before op", op.op, source, op.src);
     // Apply the operation to the local data, mutating it in place
     console.log("this.type.apply");
-    debugger;
+    // ot 算法合并 
+    console.log('this.data==',this.data)
+    console.log('op.op==',op.op)
     this._setData(this.type.apply(this.data, op.op));
     // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with
@@ -924,7 +922,7 @@ Doc.prototype._submit = function (
     }
     // Try to normalize the op. This removes trailing skip:0's and things like that.
     // 调用type 方法
-    // console.log("this.type=================", this.type);
+     console.log("this.type=================", this.type);
     if (this.type.normalize) {
       op.op = this.type.normalize(op.op);
     }
@@ -937,7 +935,7 @@ Doc.prototype._submit = function (
       callback // 回调函数
     );
     // console.log('提交 _submit')
-    // debugger
+    //
     this._otApply(
       op, //op操作
       source //source: StringBinding 实例对象
@@ -1052,7 +1050,8 @@ Doc.prototype._tryCompose = function (op) {
   // invisible, as if the document were created including the op originally
   if (last.create && "op" in op) {
     console.log("last.create");
-    debugger;
+    console.log('last.create.data==',last.create.data)
+    console.log('op.op==',op.op)
     last.create.data = this.type.apply(last.create.data, op.op);
     return last;
   }
@@ -1089,6 +1088,7 @@ Doc.prototype.submitOp = function (
   }
 
   var op = { op: component };
+  // 只要 source
   var source = options && options.source;
   // 提交op
   this._submit(

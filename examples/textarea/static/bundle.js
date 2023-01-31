@@ -886,9 +886,9 @@ function convertToText(c) {
 
 
 json.apply = function (snapshot, op) {
-  console.log('snapshot=======', snapshot);
-  console.log('op=======', op); //校验 op
-
+  // console.log('snapshot=======',snapshot)
+  // console.log('op=======',op)
+  //校验 op
   json.checkValidOp(op); // 克隆op
 
   op = clone(op);
@@ -991,7 +991,7 @@ json.incrementalApply = function (snapshot, op, _yield) {
   }
 
   return snapshot;
-}; // Checks if two paths, p1 and p2 match.
+}; // Checks if two paths, p1 and p2 match. //检查路径p1和p2是否匹配。
 
 
 var pathMatches = json.pathMatches = function (p1, p2, ignoreLast) {
@@ -1007,8 +1007,8 @@ var pathMatches = json.pathMatches = function (p1, p2, ignoreLast) {
 json.append = function (dest, // 新的op
 c // 来源op {}
 ) {
-  console.log("c=", c); // 深度拷贝
-
+  // console.log("c=", c);
+  // 深度拷贝
   c = clone(c);
 
   if (dest.length === 0) {
@@ -1099,7 +1099,7 @@ json.compose = function (op1, op2) {
 
 
 json.normalize = function (op) {
-  console.log("normalize=", op);
+  // console.log("normalize=", op);
   var newOp = [];
   op = isArray(op) ? op : [op];
 
@@ -2555,7 +2555,11 @@ StringBinding.prototype.attachDoc = function () {
   var binding = this;
 
   this._opListener = function (op, source) {
-    //订阅sharedb响应op事件
+    console.log('获取服务器socket _opListener==');
+    console.log('op==', op);
+    console.log('source==', source);
+    console.log('arguments==', arguments); //订阅sharedb响应op事件
+
     binding._onOp(op, source);
   }; // 获取服务器socket
 
@@ -2678,7 +2682,7 @@ text // 获取插入文本
     si: text
   };
   console.log("op=", op);
-  console.log('this.doc.submitOp=', this.doc.submitOp); // 广播 给服务器 发送websocket
+  console.log('广播 给服务器 发送websocket _insert ='); // 广播 给服务器 发送websocket
 
   this.doc.submitOp(op, {
     source: this,
@@ -2705,9 +2709,11 @@ text // 获取插入文本
     p: path,
     sd: text
   };
-  console.log("op=", op);
+  console.log("op=", op); // 广播 给服务器 发送websocket
+
   this.doc.submitOp(op, {
-    source: this
+    source: this,
+    id: 999
   });
 }; // 判断是否是同一个文档连接的
 
@@ -2882,7 +2888,6 @@ Connection.prototype.bindToSocket = function (socket) {
 
   socket.onmessage = function (event) {
     // console.log("event=", event);
-    // debugger
     try {
       var data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
     } catch (err) {
@@ -2902,7 +2907,7 @@ Connection.prototype.bindToSocket = function (socket) {
 
     try {
       // 接收到服务器消息
-      console.log('接收到后台服务器消息:', request.data);
+      console.log("接收到后台服务器消息:", request.data);
       connection.handleMessage(request.data);
     } catch (err) {
       util.nextTick(function () {
@@ -2914,8 +2919,6 @@ Connection.prototype.bindToSocket = function (socket) {
 
 
   if (socket.readyState === 1) {
-    debugger;
-
     connection._initializeHandshake();
   } // socket 已经连接上
 
@@ -2958,8 +2961,7 @@ Connection.prototype.bindToSocket = function (socket) {
 
 
 Connection.prototype.handleMessage = function (message) {
-  // console.log("message1=", message);
-  // debugger
+  console.log("handleMessage=", message);
   var err = null;
 
   if (message.error) {
@@ -3028,10 +3030,15 @@ Connection.prototype.handleMessage = function (message) {
       var doc = this.getExisting(message.c, message.d);
       if (doc) doc._handleSubscribe(err, message.data);
       return;
+    // op 增量
 
     case "op":
       var doc = this.getExisting(message.c, message.d);
-      if (doc) doc._handleOp(err, message);
+
+      if (doc) {
+        doc._handleOp(err, message);
+      }
+
       return;
 
     case "p":
@@ -3140,7 +3147,6 @@ Connection.prototype._setState = function (newState, reason) {
       docs[id]._onConnectionStateChanged();
     }
   } // console.log(" this.bulk =", this.bulk);
-  // debugger;
   // Emit the event to all Presences //向所有存在发出事件
 
 
@@ -3155,7 +3161,6 @@ Connection.prototype._setState = function (newState, reason) {
 
     snapshotRequest._onConnectionStateChanged();
   } // console.log(" this.bulk =", this.bulk);
-  // debugger;
 
 
   this.endBulk();
@@ -3172,15 +3177,11 @@ Connection.prototype.startBulk = function () {
 };
 
 Connection.prototype.endBulk = function () {
-  debugger;
-
   if (this.bulk) {
     for (var collection in this.bulk) {
       var actions = this.bulk[collection];
 
       this._sendBulk("f", collection, actions.f);
-
-      debugger;
 
       this._sendBulk("s", collection, actions.s);
 
@@ -3212,14 +3213,12 @@ Connection.prototype._sendBulk = function (action, collection, values) {
 
   if (ids.length === 1) {
     var id = ids[0];
-    debugger;
     this.send({
       a: action,
       c: collection,
       d: id
     });
   } else if (ids.length) {
-    debugger;
     this.send({
       a: "b" + action,
       c: collection,
@@ -3229,7 +3228,6 @@ Connection.prototype._sendBulk = function (action, collection, values) {
 
   if (versionsCount === 1) {
     var version = versions[versionId];
-    debugger;
     this.send({
       a: action,
       c: collection,
@@ -3237,7 +3235,6 @@ Connection.prototype._sendBulk = function (action, collection, values) {
       v: version
     });
   } else if (versionsCount) {
-    debugger;
     this.send({
       a: "b" + action,
       c: collection,
@@ -3255,7 +3252,7 @@ version // 版本号
   // 把文档注入到this.collections对象中
   this._addDoc(doc); // console.log("this.bulk===========", this.bulk);
   // console.log("this.bulk===========", this.bulk);
-  // debugger;
+  // ;
   // console.log('this.bulk12======',this.bulk)
 
 
@@ -3312,21 +3309,19 @@ version // 版本号
       d: doc.id,
       v: version
     };
-    console.log('message======', message); // debugger;
+    console.log("message======", message); // ;
 
     this.send(message);
   }
 };
 
 Connection.prototype.sendFetch = function (doc) {
-  debugger;
   return this._sendAction("f", doc, doc.version);
 }; //发送订阅 告诉服务器文档信息 发送s
 
 
 Connection.prototype.sendSubscribe = function (doc) {
-  debugger; // 发送客户端文档信息给服务器
-
+  // 发送客户端文档信息给服务器
   return this._sendAction("s", doc, // 文档对象
   doc.version //文档版本号
   );
@@ -3339,7 +3334,7 @@ Connection.prototype.sendUnsubscribe = function (doc) {
 
 Connection.prototype.sendOp = function (doc, op) {
   // console.log("sendOp============");
-  // debugger;
+  // ;
   // Ensure the doc is registered so that it receives the reply message
   // 把文档注入到this.collections对象中
   this._addDoc(doc);
@@ -3369,9 +3364,9 @@ Connection.prototype.sendOp = function (doc, op) {
   if (doc.submitSource) {
     message.x.source = op.source;
   } // console.log('message2=', message)
-  // debugger
+  //
   // 发消息给服务器
-  // debugger;
+  // ;
 
 
   this.send(message);
@@ -3382,7 +3377,7 @@ Connection.prototype.sendOp = function (doc, op) {
 
 
 Connection.prototype.send = function (message) {
-  console.log("发送消息给后台服务器=", message); // debugger;
+  console.log("发送消息给后台服务器=", message); // ;
 
   if (this.debug) {
     logger.info("SEND", JSON.stringify(message));
@@ -3402,7 +3397,9 @@ Connection.prototype.close = function () {
 };
 
 Connection.prototype.getExisting = function (collection, id) {
-  if (this.collections[collection]) return this.collections[collection][id];
+  if (this.collections[collection]) {
+    return this.collections[collection][id];
+  }
 };
 /**
  * Get or create a document.
@@ -3424,7 +3421,7 @@ id //文档id 集合key
     doc = docs[id] = new Doc(this, collection, id);
     this.emit("doc", doc);
   } // console.log("doc========", doc);
-  // debugger;
+  // ;
 
 
   return doc;
@@ -3654,7 +3651,6 @@ Connection.prototype._handleLegacyInit = function (message) {
   //忽略响应。
   if (message.protocolMinor) {
     // 初始化告诉服务器 客户端已经连上
-    debugger;
     return this._initializeHandshake();
   } // 设置已经连上状态
 
@@ -3665,7 +3661,6 @@ Connection.prototype._handleLegacyInit = function (message) {
 
 Connection.prototype._initializeHandshake = function () {
   // 发送 消息
-  debugger;
   this.send({
     a: "hs",
     id: this.id
@@ -3724,7 +3719,6 @@ Connection.prototype._sendPresenceAction = function (action, seq, presence) {
     ch: presence.channel,
     seq: seq
   };
-  debugger;
   this.send(message);
   return message.seq;
 };
@@ -4140,10 +4134,12 @@ Doc.prototype._handleSubscribe = function (error, snapshot) {
   this._emitNothingPending();
 
   this._flushSubscribe();
-}; //
+}; //op 操作 接受服务端 op
 
 
 Doc.prototype._handleOp = function (err, message) {
+  console.log('_handleOp message====', message);
+
   if (err) {
     if (this.inflightOp) {
       // The server has rejected submission of the current operation. If we get
@@ -4162,7 +4158,8 @@ Doc.prototype._handleOp = function (err, message) {
     this._opAcknowledged(message);
 
     return;
-  }
+  } // 如果消息版本大于当前版本
+
 
   if (this.version == null || message.v > this.version) {
     // This will happen in normal operation if we become subscribed to a
@@ -4198,7 +4195,6 @@ Doc.prototype._handleOp = function (err, message) {
 
   try {
     console.log("有op操作 _handleOp");
-    debugger;
 
     this._otApply(message, false);
   } catch (error) {
@@ -4212,18 +4208,13 @@ Doc.prototype._handleOp = function (err, message) {
 
 Doc.prototype._onConnectionStateChanged = function () {
   // console.log("this.connection.canSend====", this.connection.canSend);
-  // debugger;
+  // ;
   // 如果已经连上了
   if (this.connection.canSend) {
-    debugger;
     this.flush(); // 添加依赖
-
-    debugger;
 
     this._resubscribe();
   } else {
-    debugger;
-
     if (this.inflightOp) {
       this.pendingOps.unshift(this.inflightOp);
       this.inflightOp = null;
@@ -4250,7 +4241,6 @@ Doc.prototype._onConnectionStateChanged = function () {
 
 Doc.prototype._resubscribe = function () {
   if (!this.pendingSubscribe.length && this.wantSubscribe) {
-    debugger;
     return this.subscribe();
   }
 
@@ -4259,14 +4249,12 @@ Doc.prototype._resubscribe = function () {
   });
 
   if (!willFetch && this.pendingFetch.length) {
-    debugger;
     this.fetch();
   }
 
-  debugger;
-
   this._flushSubscribe();
 }; // Request the current document snapshot or ops that bring us up to date
+//请求当前文档快照或最新的操作
 
 
 Doc.prototype.fetch = function (callback) {
@@ -4278,7 +4266,6 @@ Doc.prototype.fetch = function (callback) {
   } // 插入到一个队列中
 
 
-  debugger;
   this.pendingFetch.push(callback);
 }; // Fetch the initial document and keep receiving updates
 //获取初始文档并保持接收更新 发送s
@@ -4312,8 +4299,7 @@ Doc.prototype._queueSubscribe = function (wantSubscribe, callback) {
   this.pendingSubscribe.push({
     wantSubscribe: !!wantSubscribe,
     callback: callback
-  });
-  debugger; // 刷新订阅
+  }); // 刷新订阅
 
   this._flushSubscribe();
 }; //
@@ -4328,10 +4314,8 @@ Doc.prototype._flushSubscribe = function () {
     // console.log("this.wantSubscribe=", this.wantSubscribe);
 
     if (this.wantSubscribe) {
-      debugger; // 发送动作  // 把文档注入到this.collections对象中
+      // 发送动作  // 把文档注入到this.collections对象中
       // 告诉服务器文档信息
-
-      debugger;
       this.connection.sendSubscribe(this);
     } else {
       // Be conservative about our subscription state. We'll be unsubscribed
@@ -4340,7 +4324,6 @@ Doc.prototype._flushSubscribe = function () {
       //对我们的订阅状态保持保守。我们将没订阅
       //在发送请求和接收回调之间的一段时间，
       // 我们设自己为unsubscribed。
-      debugger;
       this.subscribed = false;
       this.connection.sendUnsubscribe(this);
     }
@@ -4390,12 +4373,9 @@ function combineCallbacks(callbacks) {
 
 Doc.prototype.flush = function () {
   // Ignore if we can't send or we are already sending an op //如果我们不能发送或者我们已经在发送一个操作，请忽略
-  if (!this.connection.canSend || this.inflightOp) return;
-  debugger; // Send first pending op unless paused //发送第一个挂起的操作，除非暂停
+  if (!this.connection.canSend || this.inflightOp) return; // Send first pending op unless paused //发送第一个挂起的操作，除非暂停
 
   if (!this.paused && this.pendingOps.length) {
-    debugger;
-
     this._sendOp();
   }
 }; // Helper function to set op to contain a no-op.
@@ -4529,8 +4509,11 @@ Doc.prototype._otApply = function (op, source) {
         } // console.log('this.data=========',this.data)
         // console.log('componentOp.op=========',componentOp.op)
         // console.log('this.type.apply(this.data, componentOp.op)=========',this.type.apply(this.data, componentOp.op))
-        // debugger
+        // ot 算法合并
 
+
+        console.log('this.data==', this.data);
+        console.log('componentOp.op==', componentOp.op);
 
         this._setData(this.type.apply(this.data, componentOp.op)); //发布
 
@@ -4549,8 +4532,10 @@ Doc.prototype._otApply = function (op, source) {
 
     this.emit("before op", op.op, source, op.src); // Apply the operation to the local data, mutating it in place
 
-    console.log("this.type.apply");
-    debugger;
+    console.log("this.type.apply"); // ot 算法合并 
+
+    console.log('this.data==', this.data);
+    console.log('op.op==', op.op);
 
     this._setData(this.type.apply(this.data, op.op)); // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with
@@ -4669,8 +4654,9 @@ callback // 回调函数
       return this.emit("error", err);
     } // Try to normalize the op. This removes trailing skip:0's and things like that.
     // 调用type 方法
-    // console.log("this.type=================", this.type);
 
+
+    console.log("this.type=================", this.type);
 
     if (this.type.normalize) {
       op.op = this.type.normalize(op.op);
@@ -4682,7 +4668,7 @@ callback // 回调函数
     source, //source: StringBinding 实例对象
     callback // 回调函数
     ); // console.log('提交 _submit')
-    // debugger
+    //
 
 
     this._otApply(op, //op操作
@@ -4799,7 +4785,8 @@ Doc.prototype._tryCompose = function (op) {
 
   if (last.create && "op" in op) {
     console.log("last.create");
-    debugger;
+    console.log('last.create.data==', last.create.data);
+    console.log('op.op==', op.op);
     last.create.data = this.type.apply(last.create.data, op.op);
     return last;
   } // Compose two ops into a single op if supported by the type. Types that
@@ -4833,7 +4820,8 @@ callback) {
 
   var op = {
     op: component
-  };
+  }; // 只要 source
+
   var source = options && options.source; // 提交op
 
   this._submit(op, // 操作op
@@ -6422,8 +6410,8 @@ function applyOpEdit(snapshot, edit) {
   if (!type) return new ShareDBError(ERROR_CODE.ERR_DOC_TYPE_NOT_RECOGNIZED, 'Unknown type');
 
   try {
-    // console.log('applyOpEdit')
-    // debugger
+    console.log('snapshot.data=', snapshot.data);
+    console.log('edit', edit);
     snapshot.data = type.apply(snapshot.data, edit);
   } catch (err) {
     return new ShareDBError(ERROR_CODE.ERR_OT_OP_NOT_APPLIED, err.message);
@@ -6487,9 +6475,7 @@ exports.applyOps = function (snapshot, ops, options) {
       }
     }
 
-    snapshot.v = op.v; // console.log('applyOps=======')
-    // debugger
-
+    snapshot.v = op.v;
     var error = exports.apply(snapshot, op);
     if (error) return error;
   }
@@ -6573,7 +6559,6 @@ function normalizeLegacyJson0Ops(snapshot, json0Op) {
     //下一个组件。我们不需要在最后一次迭代时这么做，
     //因为没有更多的操作。
     //  console.log('types.defaultType.apply===')
-    //  debugger;
 
 
     if (i < components.length - 1) data = types.defaultType.apply(data, [component]);
@@ -6812,7 +6797,7 @@ TextDiffBinding.prototype.onInput = function () {
 
   var value = this._getElementValue();
 
-  console.log('value=', value); // debugger
+  console.log('value=', value); // 
   //如果他们内容相同
 
   if (previous === value) {
@@ -6865,7 +6850,7 @@ TextDiffBinding.prototype.onInput = function () {
     //截取删除的内容
     var removed = previous.slice(start, previous.length - end); // 删除字符串方法
 
-    this._remove(start, removed); // debugger
+    this._remove(start, removed); // 
 
   }
   /*
@@ -6885,7 +6870,7 @@ TextDiffBinding.prototype.onInput = function () {
 
     this._insert(start, // 插入开始位置
     inserted // 插入内容
-    ); // debugger
+    ); // 
 
   }
 }; // 插入文档   //光标判断偏移光标

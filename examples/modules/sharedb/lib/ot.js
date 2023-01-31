@@ -110,8 +110,8 @@ function applyOpEdit(snapshot, edit) {
   if (!type) return new ShareDBError(ERROR_CODE.ERR_DOC_TYPE_NOT_RECOGNIZED, 'Unknown type');
 
   try {
-    // console.log('applyOpEdit')
-    // debugger
+    console.log('snapshot.data=',snapshot.data)
+    console.log('edit',edit)
     snapshot.data = type.apply(snapshot.data, edit);
   } catch (err) {
     return new ShareDBError(ERROR_CODE.ERR_OT_OP_NOT_APPLIED, err.message);
@@ -178,8 +178,7 @@ exports.applyOps = function(snapshot, ops, options) {
       }
     }
     snapshot.v = op.v;
-    // console.log('applyOps=======')
-    // debugger
+    
     var error = exports.apply(snapshot, op);
     if (error) return error;
   }
@@ -258,7 +257,7 @@ function normalizeLegacyJson0Ops(snapshot, json0Op) {
 //下一个组件。我们不需要在最后一次迭代时这么做，
 //因为没有更多的操作。
   //  console.log('types.defaultType.apply===')
-  //  debugger;
+  
     if (i < components.length - 1) data = types.defaultType.apply(data, [component]);
   }
 }

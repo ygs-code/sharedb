@@ -58,6 +58,10 @@ StringBinding.prototype.attachDoc = function () {
   var binding = this;
 
   this._opListener = function (op, source) {
+    console.log('获取服务器socket _opListener==')
+    console.log('op==',op)
+    console.log('source==',source)
+    console.log('arguments==',arguments)
     //订阅sharedb响应op事件
     binding._onOp(op, source);
   };
@@ -164,6 +168,7 @@ StringBinding.prototype._insert = function (
   index, // 插入开始位置
   text // 获取插入文本
 ) {
+  
   console.log("this.path.concat=", this.path.concat);
   console.log("this.path=", this.path);
   console.log("index=", index);
@@ -171,7 +176,7 @@ StringBinding.prototype._insert = function (
   console.log("path=", path);
   var op = { p: path, si: text };
   console.log("op=", op);
-  console.log('this.doc.submitOp=',this.doc.submitOp)
+  console.log('广播 给服务器 发送websocket _insert =', )
  
   // 广播 给服务器 发送websocket
   this.doc.submitOp(op, { source: this , id:123, });
@@ -194,7 +199,8 @@ StringBinding.prototype._remove = function (
   var path = this.path.concat(index);
   var op = { p: path, sd: text };
   console.log("op=", op);
-  this.doc.submitOp(op, { source: this });
+  // 广播 给服务器 发送websocket
+  this.doc.submitOp(op, { source: this,id:999 });
 };
 // 判断是否是同一个文档连接的
 /*

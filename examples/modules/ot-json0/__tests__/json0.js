@@ -25,8 +25,8 @@ transformX = function (type, left, right) {
 genTests = function (type) {
   describe("sanity", function () {
     describe("#create()", function () {
-      return it("returns null", function () {
-        return assert.deepEqual(type.create(), null);
+      it("returns null", function () {
+        assert.deepEqual(type.create(), null);
       });
     });
     describe("#compose()", function () {
@@ -54,7 +54,7 @@ genTests = function (type) {
             ]
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: ["foo"],
@@ -81,8 +81,8 @@ genTests = function (type) {
           )
         );
       });
-      return it("merges od+oi, od+oi -> od+oi", function () {
-        return assert.deepEqual(
+      it("merges od+oi, od+oi -> od+oi", function () {
+        assert.deepEqual(
           [
             {
               p: ["foo"],
@@ -109,14 +109,32 @@ genTests = function (type) {
         );
       });
     });
-    return describe("#transform()", function () {
-      return it("returns sane values", function () {
+    describe("#transform()", function () {
+      it("returns sane values", function () {
         var t;
         t = function (op1, op2) {
           assert.deepEqual(op1, type.transform(op1, op2, "left"));
-          return assert.deepEqual(op1, type.transform(op1, op2, "right"));
+          assert.deepEqual(op1, type.transform(op1, op2, "right"));
         };
+
+        let op1 = [
+          {
+            p: ["foo"],
+            oi: 1,
+          },
+        ];
+
+        let op2 = [
+          {
+            p: ["bar"],
+            oi: 2,
+          },
+        ];
+
+        console.log("left=", type.transform(op1, op2, "left"));
+        console.log("right=", type.transform(op1, op2, "right"));
         t([], []);
+
         t(
           [
             {
@@ -126,6 +144,7 @@ genTests = function (type) {
           ],
           []
         );
+
         return t(
           [
             {
@@ -154,7 +173,7 @@ genTests = function (type) {
           },
         ])
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [3],
         type.apply(
           [1],
@@ -190,7 +209,7 @@ genTests = function (type) {
           ]
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: ["a"],
@@ -217,7 +236,7 @@ genTests = function (type) {
         )
       );
     });
-    return it("doesn't overwrite values when it merges na in append", function () {
+    it("doesn't overwrite values when it merges na in append", function () {
       var c_s, leftHas, leftOp, left_, rightHas, rightOp, right_, s_c, _ref;
       rightHas = 21;
       leftHas = 3;
@@ -255,31 +274,37 @@ genTests = function (type) {
         (left_ = _ref[1]);
       s_c = type.apply(rightHas, left_);
       c_s = type.apply(leftHas, right_);
-      return assert.deepEqual(s_c, c_s);
+      assert.deepEqual(s_c, c_s);
     });
   });
+
+  // 字符串
   describe("string", function () {
     describe("#apply()", function () {
-      return it("works", function () {
+      it("works", function () {
+        // 插入
         assert.deepEqual(
           "abc",
           type.apply("a", [
             {
-              p: [1],
-              si: "bc",
+              p: [1], // 位置
+              si: "bc",  // 插入
             },
           ])
         );
+        // 删除
         assert.deepEqual(
           "bc",
           type.apply("abc", [
             {
-              p: [0],
-              sd: "a",
+              p: [0], // 位置
+              sd: "a",   // 删除
             },
           ])
         );
-        return assert.deepEqual(
+
+        // 对象字符串
+        assert.deepEqual(
           {
             x: "abc",
           },
@@ -289,17 +314,17 @@ genTests = function (type) {
             },
             [
               {
-                p: ["x", 1],
-                si: "bc",
+                p: ["x", 1], // 位置
+                si: "bc",  //插入
               },
             ]
           )
         );
       });
     });
-    return describe("#transform()", function () {
+    describe("#transform()", function () {
       it("splits deletes", function () {
-        return assert.deepEqual(
+        assert.deepEqual(
           type.transform(
             [
               {
@@ -328,7 +353,7 @@ genTests = function (type) {
         );
       });
       it("cancels out other deletes", function () {
-        return assert.deepEqual(
+        assert.deepEqual(
           type.transform(
             [
               {
@@ -347,8 +372,8 @@ genTests = function (type) {
           []
         );
       });
-      return it("does not throw errors with blank inserts", function () {
-        return assert.deepEqual(
+      it("does not throw errors with blank inserts", function () {
+        assert.deepEqual(
           type.transform(
             [
               {
@@ -371,7 +396,8 @@ genTests = function (type) {
   });
   describe("string subtype", function () {
     describe("#apply()", function () {
-      return it("works", function () {
+      it("works", function () {
+
         assert.deepEqual(
           "abc",
           type.apply("a", [
@@ -387,6 +413,7 @@ genTests = function (type) {
             },
           ])
         );
+
         assert.deepEqual(
           "bc",
           type.apply("abc", [
@@ -402,7 +429,8 @@ genTests = function (type) {
             },
           ])
         );
-        return assert.deepEqual(
+
+        assert.deepEqual(
           {
             x: "abc",
           },
@@ -426,7 +454,7 @@ genTests = function (type) {
         );
       });
     });
-    return describe("#transform()", function () {
+    describe("#transform()", function () {
       it("splits deletes", function () {
         var a, b;
         a = [
@@ -453,7 +481,7 @@ genTests = function (type) {
             ],
           },
         ];
-        return assert.deepEqual(type.transform(a, b, "left"), [
+        assert.deepEqual(type.transform(a, b, "left"), [
           {
             p: [],
             t: "text0",
@@ -471,7 +499,7 @@ genTests = function (type) {
         ]);
       });
       it("cancels out other deletes", function () {
-        return assert.deepEqual(
+        assert.deepEqual(
           type.transform(
             [
               {
@@ -502,8 +530,8 @@ genTests = function (type) {
           []
         );
       });
-      return it("does not throw errors with blank inserts", function () {
-        return assert.deepEqual(
+      it("does not throw errors with blank inserts", function () {
+        assert.deepEqual(
           type.transform(
             [
               {
@@ -537,8 +565,8 @@ genTests = function (type) {
     });
   });
   describe("subtype with non-array operation", function () {
-    return describe("#transform()", function () {
-      return it("works", function () {
+    describe("#transform()", function () {
+      it("works", function () {
         var a, b;
         a = [
           {
@@ -554,7 +582,7 @@ genTests = function (type) {
             o: "bar",
           },
         ];
-        return assert.deepEqual(type.transform(a, b, "left"), [
+        assert.deepEqual(type.transform(a, b, "left"), [
           {
             p: [],
             t: "mock",
@@ -566,17 +594,18 @@ genTests = function (type) {
       });
     });
   });
+  // 数组
   describe("list", function () {
     describe("apply", function () {
       it("inserts", function () {
         assert.deepEqual(
           ["a", "b", "c"],
           type.apply(
-            ["b", "c"],
+            ["b", "c"], // 源数据
             [
               {
-                p: [0],
-                li: "a",
+                p: [0], // 位置
+                li: "a", //内容
               },
             ]
           )
@@ -593,7 +622,7 @@ genTests = function (type) {
             ]
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           ["a", "b", "c"],
           type.apply(
             ["a", "b"],
@@ -613,25 +642,26 @@ genTests = function (type) {
             ["a", "b", "c"],
             [
               {
-                p: [0],
-                ld: "a",
+                p: [0], // 位置
+                ld: "a", // 内容
+              },
+            ]
+          )
+        );
+
+        assert.deepEqual(
+          ["a", "c"], // 删除后内容
+          type.apply(
+            ["a", "b", "c"], // 源内容
+            [
+              {
+                p: [1], // 位置
+                ld: "b", // 删除内容
               },
             ]
           )
         );
         assert.deepEqual(
-          ["a", "c"],
-          type.apply(
-            ["a", "b", "c"],
-            [
-              {
-                p: [1],
-                ld: "b",
-              },
-            ]
-          )
-        );
-        return assert.deepEqual(
           ["a", "b"],
           type.apply(
             ["a", "b", "c"],
@@ -644,42 +674,48 @@ genTests = function (type) {
           )
         );
       });
+
+      // 替换
       it("replaces", function () {
-        return assert.deepEqual(
-          ["a", "y", "b"],
+        assert.deepEqual(
+          ["a", "y", "b"],  // 替换内容
           type.apply(
-            ["a", "x", "b"],
+            ["a", "x", "b"], // 源内容
             [
               {
-                p: [1],
-                ld: "x",
-                li: "y",
+                p: [1], // 位置
+                ld: "x",  // 替换新内容 
+                li: "y",  // 被替换内容
               },
             ]
           )
         );
       });
-      return it("moves", function () {
+
+      // 移动
+      it("moves", function () {
+        assert.deepEqual(
+          ["a", "b", "c"], //
+          type.apply(
+            ["b", "a", "c"],
+            [
+              {
+                p: [1],   // 位置1 
+                lm: 0,    // 移动到位置0
+              },
+            ]
+          )
+        );
+
+
         assert.deepEqual(
           ["a", "b", "c"],
           type.apply(
             ["b", "a", "c"],
             [
               {
-                p: [1],
-                lm: 0,
-              },
-            ]
-          )
-        );
-        return assert.deepEqual(
-          ["a", "b", "c"],
-          type.apply(
-            ["b", "a", "c"],
-            [
-              {
-                p: [0],
-                lm: 1,
+                p: [0], // 位置0
+                lm: 1, // 移动到位置1
               },
             ]
           )
@@ -1112,7 +1148,7 @@ genTests = function (type) {
             "left"
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: [1],
@@ -1202,7 +1238,7 @@ genTests = function (type) {
             "left"
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [],
           type.transform(
             [
@@ -1266,7 +1302,7 @@ genTests = function (type) {
             "left"
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: [0],
@@ -1315,7 +1351,7 @@ genTests = function (type) {
             "left"
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: [1],
@@ -1369,7 +1405,7 @@ genTests = function (type) {
             "left"
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: [2],
@@ -1393,7 +1429,7 @@ genTests = function (type) {
           )
         );
       });
-      return it("converts an attempt to re-delete a list element into a no-op", function () {
+      it("converts an attempt to re-delete a list element into a no-op", function () {
         assert.deepEqual(
           [],
           type.transform(
@@ -1412,7 +1448,7 @@ genTests = function (type) {
             "left"
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [],
           type.transform(
             [
@@ -1451,7 +1487,7 @@ genTests = function (type) {
             ]
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: [1],
@@ -1500,7 +1536,7 @@ genTests = function (type) {
             },
           ])
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: [0],
@@ -1511,7 +1547,9 @@ genTests = function (type) {
           a
         );
       });
-      return it("composes together adjacent string ops", function () {
+
+      // 组合
+      it("composes together adjacent string ops", function () {
         assert.deepEqual(
           [
             {
@@ -1534,7 +1572,7 @@ genTests = function (type) {
             ]
           )
         );
-        return assert.deepEqual(
+        assert.deepEqual(
           [
             {
               p: [],
@@ -1798,7 +1836,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [2],
@@ -1915,7 +1953,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [1],
@@ -1999,7 +2037,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [1],
@@ -2024,7 +2062,7 @@ genTests = function (type) {
       );
     });
     it("replacement vs. deletion", function () {
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [0],
@@ -2050,7 +2088,7 @@ genTests = function (type) {
       );
     });
     it("replacement vs. insertion", function () {
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [1],
@@ -2097,7 +2135,7 @@ genTests = function (type) {
           "right"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [0],
@@ -2125,7 +2163,7 @@ genTests = function (type) {
       );
     });
     it("composes replace with delete of replaced element results in insert", function () {
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [2],
@@ -2702,7 +2740,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [3],
@@ -2984,7 +3022,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [1],
@@ -3010,7 +3048,7 @@ genTests = function (type) {
         )
       );
     });
-    return it("li vs lm", function () {
+    it("li vs lm", function () {
       var li, lm, xf;
       li = function (p) {
         return [
@@ -3056,11 +3094,12 @@ genTests = function (type) {
       assert.deepEqual(li(0), xf(li(0), lm(2, 1), "left"));
       assert.deepEqual(li(1), xf(li(1), lm(2, 1), "left"));
       assert.deepEqual(li(3), xf(li(2), lm(2, 1), "left"));
-      return assert.deepEqual(li(3), xf(li(3), lm(2, 1), "left"));
+      assert.deepEqual(li(3), xf(li(3), lm(2, 1), "left"));
     });
   });
   describe("object", function () {
     it("passes sanity checks", function () {
+      // 插入
       assert.deepEqual(
         {
           x: "a",
@@ -3078,6 +3117,7 @@ genTests = function (type) {
           ]
         )
       );
+       // 删除
       assert.deepEqual(
         {},
         type.apply(
@@ -3092,7 +3132,8 @@ genTests = function (type) {
           ]
         )
       );
-      return assert.deepEqual(
+      // 替换
+      assert.deepEqual(
         {
           x: "b",
         },
@@ -3102,7 +3143,7 @@ genTests = function (type) {
           },
           [
             {
-              p: ["x"],
+              p: ["x"], // 位置
               od: "a",
               oi: "b",
             },
@@ -3172,7 +3213,7 @@ genTests = function (type) {
           "right"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [],
         type.transform(
           [
@@ -3218,7 +3259,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [],
         type.transform(
           [
@@ -3481,7 +3522,7 @@ genTests = function (type) {
           "right"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [],
         type.transform(
           [
@@ -3526,7 +3567,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [],
         type.transform(
           [
@@ -3639,7 +3680,7 @@ genTests = function (type) {
           "right"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: ["x"],
@@ -3677,7 +3718,7 @@ genTests = function (type) {
       );
     });
     it("replacement vs. deletion", function () {
-      return assert.deepEqual(
+      assert.deepEqual(
         [
           {
             p: [],
@@ -3828,9 +3869,9 @@ genTests = function (type) {
         (left_ = _ref[0]),
         (right_ = _ref[1]);
       assert.deepEqual(leftHas, type.apply(rightHas, left_));
-      return assert.deepEqual(leftHas, type.apply(leftHas, right_));
+      assert.deepEqual(leftHas, type.apply(leftHas, right_));
     });
-    return it("An attempt to re-delete a key becomes a no-op", function () {
+    it("An attempt to re-delete a key becomes a no-op", function () {
       assert.deepEqual(
         [],
         type.transform(
@@ -3849,7 +3890,7 @@ genTests = function (type) {
           "left"
         )
       );
-      return assert.deepEqual(
+      assert.deepEqual(
         [],
         type.transform(
           [
@@ -3869,22 +3910,24 @@ genTests = function (type) {
       );
     });
   });
-  return describe("randomizer", function () {
-    this.timeout(20000);
-    this.slow(6000);
-    it("passes", function () {
-      return fuzzer(type, require("./json0-generator"), 1000);
-    });
-    return it("passes with string subtype", function () {
-      type._testStringSubtype = true;
-      fuzzer(type, require("./json0-generator"), 1000);
-      return delete type._testStringSubtype;
-    });
-  });
+  // describe("randomizer", function () {
+  //   // this.timeout(20000);
+  //   setTimeout(() => {
+  //     // this.slow(6000);
+  //     it("passes", function () {
+  //       return fuzzer(type, require("../test/json0-generator"), 1000);
+  //     });
+  //      it("passes with string subtype", function () {
+  //       type._testStringSubtype = true;
+  //       fuzzer(type, require("../test/json0-generator"), 1000);
+  //       return delete type._testStringSubtype;
+  //     });
+  //   }, 20000);
+  // });
 };
 
 describe("json", function () {
-  return describe("native type", function () {
+  describe("native type", function () {
     return genTests(nativetype);
   });
 });

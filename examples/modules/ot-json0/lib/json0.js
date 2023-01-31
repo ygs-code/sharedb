@@ -164,8 +164,8 @@ function convertToText(c) {
 
 //合并
 json.apply = function (snapshot, op) {
-  console.log('snapshot=======',snapshot)
-  console.log('op=======',op)
+  // console.log('snapshot=======',snapshot)
+  // console.log('op=======',op)
   
    
   //校验 op
@@ -290,7 +290,7 @@ json.incrementalApply = function (snapshot, op, _yield) {
   return snapshot;
 };
 
-// Checks if two paths, p1 and p2 match.
+// Checks if two paths, p1 and p2 match. //检查路径p1和p2是否匹配。
 var pathMatches = (json.pathMatches = function (p1, p2, ignoreLast) {
   if (p1.length != p2.length) return false;
 
@@ -305,7 +305,7 @@ json.append = function (
   dest, // 新的op
   c // 来源op {}
 ) {
-  console.log("c=", c);
+  // console.log("c=", c);
   // 深度拷贝
   c = clone(c);
 
@@ -408,7 +408,7 @@ json.compose = function (op1, op2) {
 
 // 序列化op
 json.normalize = function (op) {
-  console.log("normalize=", op);
+  // console.log("normalize=", op);
  
   var newOp = [];
 

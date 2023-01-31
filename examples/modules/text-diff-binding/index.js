@@ -59,7 +59,7 @@ TextDiffBinding.prototype.onInput = function () {
   // 获取表单值
   var value = this._getElementValue();
   console.log('value=',value)
-  // debugger
+  // 
   //如果他们内容相同
   if (previous === value) {
     return;
@@ -119,7 +119,7 @@ TextDiffBinding.prototype.onInput = function () {
     var removed = previous.slice(start, previous.length - end);
     // 删除字符串方法
     this._remove(start, removed);
-    // debugger
+    // 
   }
 
   /*
@@ -139,7 +139,7 @@ TextDiffBinding.prototype.onInput = function () {
       start, // 插入开始位置
       inserted // 插入内容
     );
-    // debugger
+    // 
   }
 };
 

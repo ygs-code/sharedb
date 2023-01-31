@@ -1169,7 +1169,7 @@ Backend.prototype.fetchSnapshot = function (
     version,
     callback
 ) {
-    debugger
+     
     var start = Date.now();
     var backend = this;
     var projection = this.projections[index];
@@ -1407,7 +1407,7 @@ Backend.prototype._buildSnapshotFromOps = function (
     ops,
     callback
 ) {
-    debugger
+     
     var snapshot =
         startingSnapshot || new Snapshot(id, 0, null, undefined, null);
     var error = ot.applyOps(snapshot, ops, { _normalizeLegacyJson0Ops: true });

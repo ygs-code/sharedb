@@ -11,9 +11,11 @@
     "ot-fuzzer": "^1.0.0",
     "mocha": "^1.20.1",
     "coffee-script": "^1.7.1"
+
   },
   "scripts": {
-    "test": "mocha"
+    "test": "jest",
+    "start": "yarn build --watch"
   },
   "repository": {
     "type": "git",

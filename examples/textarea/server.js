@@ -53,7 +53,7 @@ function startServer() {
   var server = http.createServer(app);
 
   // Connect any incoming WebSocket connection to ShareDB
-  var wss = new WebSocket.Server({ server: server });
+  var wss = new WebSocket.Server({ server: server }); 
   wss.on("connection", function (ws) {
     // console.log('connection==========')
     // 远程socket

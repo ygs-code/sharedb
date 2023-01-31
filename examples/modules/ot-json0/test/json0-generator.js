@@ -12,7 +12,7 @@ var clone,
 
 json0 = require("../lib/json0");
 
-(_ref = require("ot-fuzzer")),
+(_ref = require("../../ot-fuzzer")),
   (randomInt = _ref.randomInt),
   (randomReal = _ref.randomReal),
   (randomWord = _ref.randomWord);

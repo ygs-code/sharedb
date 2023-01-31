@@ -301,7 +301,7 @@ Agent.prototype._isOwnOp = function (collection, op) {
   return this._src() === op.src && collection === (op.i || op.c);
 };
 
-// 发送信息给客户端
+// 服务端发送信息给客户端
 Agent.prototype.send = function (message) {
 //   console.log("Agent.prototype.send  message = ", message);
   // Quietly drop replies if the stream was closed
