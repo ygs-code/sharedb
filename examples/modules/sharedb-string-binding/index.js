@@ -9,7 +9,7 @@ function StringBinding(element, doc, path) {
   console.log("path=", path);
   // 构造继承
   TextDiffBinding.call(this, element);
-  //获取文档对象
+  //获取文档对象 用户socket 发送
   this.doc = doc;
   //
   this.path = path || [];
@@ -61,6 +61,8 @@ StringBinding.prototype.attachDoc = function () {
     //订阅sharedb响应op事件
     binding._onOp(op, source);
   };
+
+  // 获取服务器socket
   this.doc.on("op", this._opListener);
 };
 
@@ -170,8 +172,9 @@ StringBinding.prototype._insert = function (
   var op = { p: path, si: text };
   console.log("op=", op);
   console.log('this.doc.submitOp=',this.doc.submitOp)
+ 
   // 广播 给服务器 发送websocket
-  this.doc.submitOp(op, { source: this });
+  this.doc.submitOp(op, { source: this , id:123, });
 };
 
 /*
