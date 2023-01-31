@@ -4,71 +4,107 @@
  * @LastEditors: Yao guan shou
  * @LastEditTime: 2022-06-01 17:54:59
  * @FilePath: /sharedb/examples/textarea/server.js
- * @Description: 
+ * @Description:
  */
-var http = require("http");
-var express = require("express");
+var http = require('http');
+var express = require('express');
 // var ShareDB = require("sharedb");
-var ShareDB = require("../modules/sharedb");
+var ShareDB = require('../modules/sharedb');
 // WebSocket
-var WebSocket = require("ws");
+var WebSocket = require('ws');
+var bodyParser = require('body-parser');
+// import { WebSocketServer } from 'ws';
 
-var WebSocketJSONStream = require("../modules/@teamwork/websocket-json-stream");
+var WebSocketJSONStream = require('../modules/@teamwork/websocket-json-stream');
 // var WebSocketJSONStream = require("@teamwork/websocket-json-stream");
 
 var backend = new ShareDB();
 // 订阅 send 事件
-backend.on('send',()=>{
-  console.log('backend.on(send)')
-})
- 
- 
+backend.on('send', () => {
+    console.log('backend.on(send)');
+});
 
 // Create initial document then fire callback
 function createDoc(callback) {
     // 客户端
-  // 获取 连接对象
-  var connection = backend.connect();
-  // 获取文档
-  var doc = connection.get("examples", "textarea");
-  // console.log('doc=========',doc)
-  // 客户端
-  doc.fetch(function (err) {
-    if (err) throw err;
-    if (doc.type === null) {
-      // 创建一个空的文档
-      doc.create({ content: "" }, callback);
-      return;
+    // 获取 连接对象
+    var connection = backend.connect();
+    // 获取文档
+    var doc = connection.get('examples', 'textarea');
+    // console.log('doc=========',doc)
+    // 客户端
+    doc.fetch(function (err) {
+        if (err) throw err;
+        if (doc.type === null) {
+            // 创建一个空的文档
+            doc.create({ content: '' }, callback);
+            return;
+        }
+        // 服务端
+        callback();
+    });
+}
+// 获取回调地址参数
+function getUrlParams(url) {
+    // 通过 ? 分割获取后面的参数字符串
+    let urlStr = url.split('?')[1];
+    // 创建空对象存储参数
+    let obj = {};
+    // 再通过 & 将每一个参数单独分割出来
+    let paramsArr = urlStr.split('&');
+    for (let i = 0, len = paramsArr.length; i < len; i++) {
+        // 再通过 = 将每一个参数分割为 key:value 的形式
+        let arr = paramsArr[i].split('=');
+        obj[arr[0]] = arr[1];
     }
-    // 服务端
-    callback();
-  });
+    return obj;
 }
 
 function startServer() {
-  // return 
-  // Create a web server to serve files and listen to WebSocket connections
-  var app = express();
-  app.use(express.static("static"));
-  var server = http.createServer(app);
+    // return
+    // Create a web server to serve files and listen to WebSocket connections
+    var app = express();
+    app.use(express.static('static'));
+    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.json());
 
-  // Connect any incoming WebSocket connection to ShareDB
-  var wss = new WebSocket.Server({ server: server }); 
-  wss.on("connection", function (ws) {
-    // console.log('connection==========')
-    // 远程socket
-    var stream = new WebSocketJSONStream(ws);
-    // stream.write({
-    //   name:'abc'
-    // })
-  //  console.log('backend.listen1') 
-    backend.listen(stream);
-  });
+    // 应用中间件
+    app.use(express.json());
+    app.use(express.urlencoded());
+    var server = http.createServer(app);
 
-  server.listen(8091);
-  console.log("Listening on http://localhost:8091");
+    // Connect any incoming WebSocket connection to ShareDB
+    // var wss = new WebSocket.Server({ server: server });
+    const wss = new WebSocket.Server({ noServer: true });
+
+    server.on('upgrade', function upgrade(request, socket, head) {
+        const { id } = getUrlParams(request.url) || {}; // 如果没有id则不给连接
+        console.log('id===', id);
+        if (!id) {
+            return false;
+        }
+
+        //
+        wss.handleUpgrade(request, socket, head, function done(ws) {
+            // 触发连接
+            wss.emit('connection', ws, request);
+        });
+    });
+
+    wss.on('connection', function (ws) {
+        console.log('connection==========');
+        // 远程socket
+        var stream = new WebSocketJSONStream(ws);
+        // stream.write({
+        //   name:'abc'
+        // })
+        //  console.log('backend.listen1')
+        backend.listen(stream);
+    });
+
+    server.listen(8091);
+    console.log('Listening on http://localhost:8091');
 }
-
 
 // 创建服务
 createDoc(startServer);

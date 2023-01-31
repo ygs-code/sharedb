@@ -17,7 +17,7 @@ var ReconnectingWebSocket = require('../modules/reconnecting-websocket').default
 //给input添加onChange事件，触发onChange事件 变成op，调用sharedb 发布op消息 
 var StringBinding = require('../modules/sharedb-string-binding')
 // socket
-var socket = new ReconnectingWebSocket('ws://' + window.location.host)
+var socket = new ReconnectingWebSocket('ws://' + window.location.host+'?id=123&name=yaoguanshou')
 
 var connection = new sharedb.Connection(socket)
 
