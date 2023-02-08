@@ -9,11 +9,11 @@
 var http = require("http");
 var express = require("express");
 // var ShareDB = require("sharedb");
-var ShareDB = require("../modules/sharedb");
+var ShareDB = require("sharedb");
 // WebSocket
 var WebSocket = require("ws");
 var bodyParser = require("body-parser");
-ShareDB.types.register(require("rich-text").type);
+// ShareDB.types.register(require("rich-text").type);
 // import { WebSocketServer } from 'ws';
 
 var WebSocketJSONStream = require("../modules/@teamwork/websocket-json-stream");

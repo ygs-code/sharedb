@@ -749,6 +749,7 @@ Doc.prototype._otApply = function (op, source) {
     //在发射时。要消除这种情况，就需要重新思考如何去做
     //这样的外部绑定被实现。
     if (!source && this.type === types.defaultType && op.op.length > 1) {
+    
       if (!this.applyStack) {
         this.applyStack = [];
       }
@@ -784,13 +785,14 @@ Doc.prototype._otApply = function (op, source) {
 
     // The 'before op' event enables clients to pull any necessary data out of
     // the snapshot before it gets changed
-
+    // debugger;
     this.emit("before op", op.op, source, op.src);
     // Apply the operation to the local data, mutating it in place
     console.log("this.type.apply");
     // ot 算法合并 
     console.log('this.data==',this.data)
     console.log('op.op==',op.op)
+    // debugger
     this._setData(this.type.apply(this.data, op.op));
     // Emit an 'op' event once the local data includes the changes from the
     // op. For locally submitted ops, this will be synchronously with

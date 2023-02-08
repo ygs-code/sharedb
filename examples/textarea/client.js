@@ -8,8 +8,8 @@
  */
 
 // sharedb 协同
-var sharedb = require("../modules/sharedb/lib/client");
-ShareDB.types.register(require("rich-text").type);
+var sharedb = require("sharedb/lib/client");
+// ShareDB.types.register(require("rich-text").type);
 // websocket 连接
 var ReconnectingWebSocket =
   require("../modules/reconnecting-websocket").default;
