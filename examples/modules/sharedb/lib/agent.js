@@ -1004,6 +1004,7 @@ Agent.prototype._fetchSnapshotByTimestamp = function (
 
 //发送一个初始化 给客户端
 Agent.prototype._initMessage = function (action) {
+  console.log('action==================',action)
   return {
     a: action,
     protocol: 1,
